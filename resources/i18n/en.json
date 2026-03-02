@@ -1,0 +1,24 @@
+{
+    "i18n": {
+        "finished_init": "Done! Language: {lang}, language resource: {dir}"
+    },
+    "crash": {
+        "message": "Crash Report",
+        "caused_by": "Caused by {reason}",
+        "unknown_reason": "Unknown Reason",
+        "uncaught_exception": "Uncaught Exception",
+        "traceback": {
+            "none": "No exception stack trace.",
+            "caused_crash_exception": "The exception caused crash:\n%{e}",
+            "noticable_exception": "Also, these exception probably led to the crash exception:\n%{exceptions_string}",
+            "var": "Var Monitor:\n"
+        },
+        "tips": {
+        }
+    },
+    "ui": {
+        "main_window": {
+            "show": "MainWindow is created."
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "i18n": {
+        "finished_init": "初始化完成，语言: %{lang}，资源目录: \"%{dir}\""
+    },
+    "crash": {
+        "message": "崩溃报告",
+        "caused_by": "由 %{reason} 导致",
+        "unknown_reason": "未知原因",
+        "uncaught_exception": "未捕获的异常",
+        "traceback": {
+            "none": "无异常追踪 :(",
+            "caused_crash_exception": "导致崩溃的异常:\n%{e}",
+            "noticable_exception": "同时，以下的异常可能间接导致此崩溃:\n%{exceptions_string}"
+        },
+        "tips": {
+            "ZeroDivisionError": "除数为零"
+        }
+    },
+    "ui": {
+        "main_window": {
+            "show": "主窗口被创建",
+            "error": {
+                "init": "无法启动主窗口: 无法初始化UI"
+            }
+        }
+    }
+}
