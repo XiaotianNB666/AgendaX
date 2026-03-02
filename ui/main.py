@@ -37,6 +37,5 @@ MAIN_WINDOW = MainWindow()
 
 def main() -> int:
     MAIN_WINDOW.show()
-    0/0
     LOG.info(t('ui.main_window.show'))
     return QAPP.exec_()
