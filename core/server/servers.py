@@ -1,6 +1,6 @@
 from argparse import ArgumentTypeError
 from typing import Any
-from core.app import IS_BUILTIN
+from core.app import get_builtin
 from core.bases.logic_sc import LogicAddress, LogicServer, DataTypes
 
 class BuiltinAddress(LogicAddress):
@@ -14,7 +14,7 @@ class BuiltinServer(LogicServer):
         if address is None:
             address = self.address
         if address is BUILTIN_SERVER_ADDRESS:
-            return IS_BUILTIN
+            return get_builtin()
         else:
             return False
 
@@ -31,7 +31,7 @@ BUILTIN_SERVER_ADDRESS: BuiltinAddress | None = None
 
 def get_builtin_server_address() -> BuiltinAddress:
     global BUILTIN_SERVER_ADDRESS
-    if not IS_BUILTIN:
+    if not get_builtin():
          raise ArgumentTypeError("IS_BUILTIN cannot be 'False'")
     if not BUILTIN_SERVER_ADDRESS is None:
          return BUILTIN_SERVER_ADDRESS
