@@ -1,0 +1,6 @@
+dist/
+*.spec
+build.bat
+build/
+.idea/
+log/
