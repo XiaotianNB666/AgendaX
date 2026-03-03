@@ -5,6 +5,7 @@ FROM_SERVER: list[tuple[bytes, str]] = []
 
 CURRENT_SERVER: LogicServer | None = None
 
+
 def set_current_server(cs: LogicServer) -> None:
     global CURRENT_SERVER
     CURRENT_SERVER = cs

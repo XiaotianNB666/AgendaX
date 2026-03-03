@@ -9,6 +9,7 @@ from core.utils.path_utils import get_base_dir
 
 _ok: bool = False
 
+
 def init_i18n(locale: str = 'zh-CN', fallback: str = 'en'):
     """
     初始化 i18n 配置
@@ -21,13 +22,13 @@ def init_i18n(locale: str = 'zh-CN', fallback: str = 'en'):
     global _ok
 
     base_dir = get_base_dir()
-    
+
     i18n_dir = os.path.join(base_dir, 'resources', 'i18n')
-    
+
     os.makedirs(i18n_dir, exist_ok=True)
-    
+
     i18n.resource_loader.loaders.clear()
-    
+
     i18n.load_path.append(i18n_dir)
     i18n.set('locale', locale)
     i18n.set('fallback', fallback)
@@ -35,12 +36,13 @@ def init_i18n(locale: str = 'zh-CN', fallback: str = 'en'):
     i18n.set('skip_locale_root_data', True)
     i18n.set('filename_format', '{locale}.{format}')
     i18n.set('file_format', 'json')
-    
+
     i18n.resource_loader.init_loaders()
 
     _ok = True
 
-    LOG.info(t("i18n.finished_init", lang = locale, dir = i18n_dir))
+    LOG.info(t("i18n.finished_init", lang=locale, dir=i18n_dir))
+
 
 def set_locale(locale: str):
     """
@@ -52,6 +54,7 @@ def set_locale(locale: str):
     i18n.set('locale', locale)
     print(f"[i18n] 语言已切换为: {locale}")
 
+
 def get_locale() -> str:
     """
     获取当前语言
@@ -60,6 +63,7 @@ def get_locale() -> str:
         当前语言代码
     """
     return i18n.config.get('locale')
+
 
 def t(key: str, **kwargs) -> str:
     """
@@ -76,6 +80,7 @@ def t(key: str, **kwargs) -> str:
         init_i18n()
     return i18n.t(key, **kwargs)
 
+
 def get_available_locales() -> list:
     """
     获取可用的语言列表
@@ -86,17 +91,19 @@ def get_available_locales() -> list:
     i18n_dir = i18n.config.get('load_path')[0] if i18n.config.get('load_path') else None
     if not i18n_dir or not os.path.exists(i18n_dir):
         return []
-    
+
     locales = []
     for filename in os.listdir(i18n_dir):
         if filename.endswith('.json') or filename.endswith('.yml') or filename.endswith('.yaml'):
             locale = filename.split('.')[0]
             locales.append(locale)
-    
+
     return sorted(list(set(locales)))
+
 
 def haveKey(key: str) -> bool:
     locale = get_locale()
     return key in i18n.translations.container.get(locale, {})
+
 
 __all__ = ['init_i18n', 'set_locale', 'get_locale', 't', 'get_available_locales', 'i18n']
