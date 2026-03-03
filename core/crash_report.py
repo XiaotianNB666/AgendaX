@@ -3,7 +3,7 @@ import time
 from pprint import pformat
 import traceback
 from typing import Any, Callable, Optional
-from core.app import APP
+from core.app import APP, app_force_stop
 from core.utils.logger import logging
 
 from core.i18n import t, haveKey
@@ -156,7 +156,7 @@ def crash_handler(name: str | None = None):
                 cr = CrashReport(reason=t("crash.uncaught_exception"))
                 cr.set_exception(e)
                 CRASH_LOG.critical(f'{APP.name} crashed{"" if name is None else f" at {name}"}!!!\n{cr.string}')
-                exit(1)
+                app_force_stop(1)
             return result
 
         return wrapper
