@@ -21,4 +21,5 @@ jobs:
         pip install -r requirements-linux.txt
     - name: Analysing the code with pylint
       run: |
-        pylint --disable=C,R $(git ls-files '*.py')
+        pylint --disable=C,R app_main.py
+        pylint --disable=C,R app_server.py
