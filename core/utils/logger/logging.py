@@ -6,8 +6,9 @@ import logging
 import os
 import sys
 from datetime import datetime
+from logging import StreamHandler
 from logging.handlers import TimedRotatingFileHandler
-from typing import Union
+from typing import Union, override
 
 from core.bases.resource_release import ResourceReleasable
 
@@ -52,6 +53,7 @@ class Logger(ResourceReleasable):
             self._internal_logger.removeHandler(hdlr)
 
         _create_log_folder()
+
         file_handler = TimedRotatingFileHandler('./log/app.log', encoding='utf-8', delay=True, backupCount=10, when="midnight")
         file_handler.setLevel(logging.DEBUG)
         file_handler.createLock()
@@ -59,7 +61,7 @@ class Logger(ResourceReleasable):
         self.addHandler(file_handler)
         self.file_handler = file_handler
 
-        handler = logging.StreamHandler()
+        handler = self._StreamHandler(sys.stdout)
         handler.setLevel(level)
         handler.setFormatter(self._DynamicFormatter())
         self._internal_logger.addHandler(handler)
@@ -100,7 +102,8 @@ class Logger(ResourceReleasable):
         def __init__(self, useColor: bool|None = None):
             super().__init__()
             self._use_color = sys.stdout.isatty() if useColor is None and not sys.stdout is None else useColor
-        
+
+        @override
         def format(self, record: logging.LogRecord) -> str:
             """
             格式化日志记录
@@ -136,7 +139,26 @@ class Logger(ResourceReleasable):
                 log_line += f"\n{traceback.format_exc().rstrip()}"
             
             return log_line
-    
+
+    class _StreamHandler(StreamHandler):
+        @override
+        def __init__(self, stream = None, stderr_level = logging.ERROR, err_stream = sys.stderr):
+            super().__init__(stream)
+            self.stderr_level = stderr_level
+            self.err_stream = err_stream
+
+        @override
+        def emit(self, record):
+            try:
+                msg = self.format(record)
+                stream = self.stream if record.levelno <= self.stderr_level else self.err_stream
+                stream.write(msg + self.terminator)
+                self.flush()
+            except RecursionError:  # See issue 36272
+                raise
+            except Exception:
+                self.handleError(record)
+
     # ============ 标准 logging API ============
     
     def debug(self, msg: str, *args, **kwargs):
@@ -210,7 +232,8 @@ class Logger(ResourceReleasable):
     def getEffectiveLevel(self) -> int:
         """获取有效日志级别"""
         return self._internal_logger.getEffectiveLevel()
-    
+
+    @override
     def release_resource(self):
         if self.file_handler:
             self.file_handler.close()

@@ -11,3 +11,7 @@ def get_base_dir() ->  str:
     else:
         # dev env
         return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+@cache
+def get_res_path(path: str = "") -> str:
+    return os.path.join(get_base_dir(), 'resources', path)
