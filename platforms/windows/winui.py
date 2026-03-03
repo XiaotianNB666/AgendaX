@@ -5,7 +5,7 @@ import sys
 import ctypes
 
 
-def enable_win_blur_background(window: QWidget, blur_type: int = 1) -> None:
+def enable_win_blur_background(window: QWidget, blur_type: int = 1) -> QWidget | None:
     """
     仅在 Windows 上生效：
     - 设置窗口无边框全屏
@@ -38,3 +38,5 @@ def enable_win_blur_background(window: QWidget, blur_type: int = 1) -> None:
         ctypes.byref(ctypes.c_int(blur_type)),
         ctypes.sizeof(ctypes.c_int),
     )
+
+    return central_widget

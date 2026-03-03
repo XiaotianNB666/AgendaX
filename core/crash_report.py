@@ -110,10 +110,12 @@ class CrashReport:
             result_string = ""
             exception_lines_list = traceback.format_exception(type(e), e, e.__traceback__)
             error_name = e.__class__.__name__
+            exception_lines_list.reverse()
+            trace_stack_string = "".join([">" + s for s in exception_lines_list[1:-1]])
             if haveKey(f'crash.tips.{error_name}'):
-                result_string += f'{t(f"crash.tips.{error_name}", e_name=error_name, msg=str(e))} ([{error_name}] {e})\n{"".join([">" + s for i, s in enumerate(exception_lines_list[1:-1])])}'
+                result_string += f'{t(f"crash.tips.{error_name}", e_name=error_name, msg=str(e))} ([{error_name}] {e})\n{trace_stack_string}'
             else:
-                result_string += f"[{error_name}] {e}"
+                result_string += f"[{error_name}] {e}\n{trace_stack_string}"
 
             return result_string
 

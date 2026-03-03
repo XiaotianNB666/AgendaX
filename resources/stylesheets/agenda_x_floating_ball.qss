@@ -1,0 +1,4 @@
+AgendaXFloatingBall {
+    background-color: rgba(200, 200, 200, /*${opacity_high}$*/);
+    border-radius: 30px;
+}

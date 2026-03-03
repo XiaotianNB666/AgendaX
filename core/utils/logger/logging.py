@@ -80,15 +80,10 @@ class Logger(ResourceReleasable):
         try:
             # 获取当前调用栈
             frame = inspect.currentframe()
-            # 跳过 Logger.__init__ 和 _get_caller_module
-            for _ in range(3):
-                if frame:
-                    frame = frame.f_back
 
-            # 查找第一个非 logging 相关的模块
             while frame:
                 module = inspect.getmodule(frame)
-                if module and not module.__name__.endswith('logging'):
+                if module and not module.__name__.__contains__('logging'):
                     module_name = module.__name__
                     return module_name
                 frame = frame.f_back if frame else None

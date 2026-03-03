@@ -1,5 +1,4 @@
-from email.policy import default
-from functools import cache
+from argparse import ArgumentTypeError
 from os import path
 
 from PyQt5.QtCore import QFile, QIODevice
@@ -7,13 +6,12 @@ from PyQt5.QtWidgets import QWidget
 
 from core.utils.path_utils import get_res_path
 from core.utils.string_utils import snake
-from ui.main import LOG
 
 loaded: dict[type, str] = {}
 
 default_qss = """
 * {
-    background-color: #ddddd;
+    background-color: #dddddd;
 }
 """
 
@@ -22,11 +20,24 @@ class QSSLoader:
     qw: type
     qw_type: str
 
-    def __init__(self, qw: type):
-        self.qw = qw
-        self.qw_type = snake(str(type(qw)))
+    def __init__(self, qw: QWidget | type):
+        if isinstance(qw, QWidget):
+            self.qw = type(qw)
+        elif issubclass(qw, QWidget):
+            self.qw = qw
+        else:
+            raise ArgumentTypeError("qw need QWidget.")
+        self.qw_type = snake(self.qw.__name__)
 
-    def load(self) -> str:
+    def load(self, **kargs):
+        """**kargs: 是qss中值替换操作"""
+        qss = self._load()
+        for k, v in kargs.items():
+            qss = qss.replace(f'/*${{{k}}}$*/', str(v))
+        return qss
+
+    def _load(self) -> str:
+        from ui.main import LOG
         global loaded, default_qss
         if self.qw in loaded:
             return loaded[self.qw]
@@ -37,7 +48,7 @@ class QSSLoader:
             qss = self.load_from_parents()
             if qss != '':
                 return qss
-            LOG.error(f'cannot load qss[{self.qw_type}] from: {qss_path}.')
+            LOG.error(f'cannot load qss[{self.qw_type}] from: {qss_path}')
             return default_qss
         return qfile.readAll().data().decode('utf-8')
 
@@ -46,7 +57,8 @@ class QSSLoader:
         final_qss: str = ''
         for T in self.qw.__bases__:
             if issubclass(T, QWidget) and T is not QWidget and not T in loaded:
-                qss = QSSLoader(T).load()
+                qss = QSSLoader(T)._load()
+                loaded[self.qw] = qss
                 loaded[T] = qss
                 final_qss += qss
 
