@@ -1,15 +1,17 @@
 from argparse import ArgumentTypeError
-from typing import Any
+from typing import Any, override
 from core.app import get_builtin
 from core.bases.logic_sc import LogicAddress, LogicServer, DataTypes
 
 class BuiltinAddress(LogicAddress):
-        def __str__(self) -> str:
-            return 'ui thread'
+    @override
+    def __str__(self) -> str:
+        return 'ui thread'
 
 class BuiltinServer(LogicServer):
     global BUILTIN_SERVER_ADDRESS
 
+    @override
     def connect(self, address: LogicAddress|None = None) -> bool:
         if address is None:
             address = self.address
@@ -18,12 +20,15 @@ class BuiltinServer(LogicServer):
         else:
             return False
 
+    @override
     def is_connected(self) -> bool:
          return bool(BUILTIN_SERVER_ADDRESS)
-    
+
+    @override
     def close_connect(self) -> None:
         pass
 
+    @override
     def send(self, data: Any, data_type: str = DataTypes.BYTES):
         ...
 

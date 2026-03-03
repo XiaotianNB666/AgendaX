@@ -3,9 +3,9 @@
 使用 python-i18n 库，支持 YAML/JSON 格式
 """
 import os
-import sys
 import i18n
 from core.app import LOG
+from core.utils.path_utils import get_base_dir
 
 _ok: bool = False
 
@@ -20,12 +20,7 @@ def init_i18n(locale: str = 'zh-CN', fallback: str = 'en'):
 
     global _ok
 
-    if getattr(sys, 'frozen', False):
-        # pyinstaller 打包兼容
-        base_dir = sys._MEIPASS if hasattr(sys, '_MEIPASS') else os.path.dirname(sys.executable) # type: ignore
-    else:
-        # dev env
-        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    base_dir = get_base_dir()
     
     i18n_dir = os.path.join(base_dir, 'resources', 'i18n')
     

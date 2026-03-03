@@ -1,0 +1,6 @@
+Card {
+    border-radius: 10%;
+    border-color: #c0c0c0;
+    border-width: 2px;
+    background-color: #ddddd;
+}

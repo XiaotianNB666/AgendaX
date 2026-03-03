@@ -10,7 +10,7 @@
         "traceback": {
             "none": "No exception stack trace.",
             "caused_crash_exception": "The exception caused crash:\n%{e}",
-            "noticable_exception": "Also, these exception probably led to the crash exception:\n%{exceptions_string}",
+            "noticeable_exception": "Also, these exception probably led to the crash exception:\n%{exceptions_string}",
             "var": "Var Monitor:\n"
         },
         "tips": {

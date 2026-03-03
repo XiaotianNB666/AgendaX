@@ -1,6 +1,5 @@
 import sys
 
-from core.bases.logic_sc import LogicServer
 from core.utils.logger import logging
 
 class APP:

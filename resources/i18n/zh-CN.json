@@ -10,7 +10,7 @@
         "traceback": {
             "none": "无异常追踪 :(",
             "caused_crash_exception": "导致崩溃的异常:\n%{e}",
-            "noticable_exception": "同时，以下的异常可能间接导致此崩溃:\n%{exceptions_string}"
+            "noticeable_exception": "同时，以下的异常可能间接导致此崩溃:\n%{exceptions_string}"
         },
         "tips": {
             "ZeroDivisionError": "除数为零"
