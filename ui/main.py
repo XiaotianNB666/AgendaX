@@ -1,10 +1,9 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QMainWindow, QWidget, QApplication, QHBoxLayout, QPushButton
-from PyQt5.QtGui import QFont, QMouseEvent
+from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtGui import QMouseEvent
 
 import sys
 
-from core.app import APP
+from core.app import APP, register_force_stop
 from core.crash_report import CrashReport
 from core.i18n import t
 from core.utils.logger.logging import getLogger
@@ -18,9 +17,9 @@ UICRASH = CrashReport()
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.initUI()
+        self.init_ui()
 
-    def initUI(self) -> None:
+    def init_ui(self) -> None:
         enable_win_blur_background(self)
         container = self.centralWidget()
 
@@ -33,12 +32,17 @@ class MainWindow(QMainWindow):
         super().mouseDoubleClickEvent(a0)
         self.hide()
 
+    def force_stop(self):
+        self.close()
+        QApplication.quit()
+
 
 QAPP = QApplication(sys.argv)
 MAIN_WINDOW = MainWindow()
 
 
 def main() -> int:
+    register_force_stop(MAIN_WINDOW.force_stop)
     MAIN_WINDOW.show()
     LOG.info(t('ui.main_window.show'))
     return QAPP.exec_()

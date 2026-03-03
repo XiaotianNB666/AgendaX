@@ -34,7 +34,10 @@ def main(is_builtin: bool) -> int:
     set_builtin(is_builtin)
     VAR_MONITOR.watch('boot_main.main@is_builtin', is_builtin)
     init()
-    server_repl()
-    while get_server_status() and get_builtin():
-        WSL.peek()
+    while get_server_status():
+        if not get_builtin():
+            WSL.peek()
+            server_repl()
+        else:
+            break
     return 0
