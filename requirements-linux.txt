@@ -1,0 +1,2 @@
+python-i18n
+pyqt5
