@@ -3,7 +3,7 @@ from core.utils.logger import logging
 import typing
 import threading
 
-from core.app import APP, LOG
+from core.app import APP
 
 class Task:
 
@@ -20,6 +20,9 @@ class Task:
     
     def execute(self):
         self.thread.start()
+
+    def force_stop(self):
+        self.thread._stop() #type: ignore
 
 def __static_exec__(task: Task) -> int:
     if Task.MIN < task.task_type <= Task.MAJOR:

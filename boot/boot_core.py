@@ -10,6 +10,7 @@ from platforms.windows.winutils import WSL, registerShutdown
 
 assert __name__ != "__main__", "This cannot be executed directly."
 
+
 def init():
     atexit.register(clean)
     registerShutdown(clean)
@@ -20,10 +21,12 @@ def init():
 
     VAR_MONITOR.watch("server", CURRENT_SERVER)
 
+
 def clean():
     LOG.info("Stopping...")
     for releasable in RESOURCE_RELEASE:
         releasable.release_resource()
+
 
 # server
 @crash_handler(f"{APP.name}-server")

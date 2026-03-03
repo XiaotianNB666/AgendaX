@@ -1,5 +1,6 @@
 from re import sub
 
+
 def snake(s: str) -> str:
     ## Replace hyphens with spaces
     s = s.replace('-', ' ')

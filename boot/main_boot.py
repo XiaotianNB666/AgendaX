@@ -3,6 +3,7 @@ from .boot_core import main as maincore
 from core.app import APP, set_server_status
 from core.utils.app_thread import Task
 
+
 # ui
 @crash_handler(f"{APP.name}-ui")
 def ui_main() -> int:
@@ -11,8 +12,10 @@ def ui_main() -> int:
     set_server_status(False)
     return result
 
-server: Task = Task(f'{APP.name}-server', lambda: maincore(True), task_type = Task.APP_MAIN)
-ui: Task = Task(f'{APP.name}-ui', ui_main, task_type = Task.APP_MAIN)
+
+server: Task = Task(f'{APP.name}-server', lambda: maincore(True), task_type=Task.APP_MAIN)
+ui: Task = Task(f'{APP.name}-ui', ui_main, task_type=Task.APP_MAIN)
+
 
 def main():
     server.execute()

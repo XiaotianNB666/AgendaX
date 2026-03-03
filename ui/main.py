@@ -14,10 +14,12 @@ LOG = getLogger(f'{APP.name}-ui')
 
 UICRASH = CrashReport()
 
+
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.initUI()
+
     def initUI(self) -> None:
         enable_win_blur_background(self)
         container = self.centralWidget()
@@ -26,7 +28,7 @@ class MainWindow(QMainWindow):
             LOG.error('cannot get central container.')
             UICRASH.reason = t('ui.main_window.error.init')
             LOG.critical(UICRASH.string)
-    
+
     def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
         super().mouseDoubleClickEvent(a0)
         self.hide()
@@ -34,6 +36,7 @@ class MainWindow(QMainWindow):
 
 QAPP = QApplication(sys.argv)
 MAIN_WINDOW = MainWindow()
+
 
 def main() -> int:
     MAIN_WINDOW.show()

@@ -17,6 +17,7 @@ default_qss = """
 }
 """
 
+
 class QSSLoader:
     qw: type
     qw_type: str
@@ -32,7 +33,7 @@ class QSSLoader:
         qss_path = path.join(get_res_path('stylesheets'), self.qw_type + '.qss')
         qfile = QFile(qss_path)
 
-        if not qfile.open(QIODevice.ReadOnly | QIODevice.Text): # type: ignore
+        if not qfile.open(QIODevice.ReadOnly | QIODevice.Text):  # type: ignore
             qss = self.load_from_parents()
             if qss != '':
                 return qss
