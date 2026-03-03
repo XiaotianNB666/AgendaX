@@ -131,7 +131,7 @@ f"""{self.report_title}:
                 for i, e_struct in enumerate(exceptions):
                     noticable_exception += \
 f"""[{i}: {time.strftime('%Y-%m-%d %H:%M:%S', e_struct[1])}] {get_string_of(e_struct)}"""
-                final_string += t('crash.traceback.noticable_exception', exceptions_string=noticable_exception)
+                final_string += t('crash.traceback.noticeable_exception', exceptions_string=noticable_exception)
                 return final_string
 
     @property

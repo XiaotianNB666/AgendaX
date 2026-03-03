@@ -1,15 +1,16 @@
 """
 AgendaX动态日志记录器模块
 """
-import logging
-from logging.handlers import TimedRotatingFileHandler
-import sys
-import os
 import inspect
+import logging
+import os
+import sys
 from datetime import datetime
-from typing import Optional, Union
+from logging.handlers import TimedRotatingFileHandler
+from typing import Union
 
 from core.bases.resource_release import ResourceReleasable
+
 
 class Logger(ResourceReleasable):
     """
