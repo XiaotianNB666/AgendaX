@@ -1,14 +1,11 @@
 from abc import ABC, abstractmethod
 from PyQt5.QtWidgets import QListWidget
 
-from ui.construct.bases.abstract_widget import AbstractWidgetMeta
-from ui.utils.qss_loader import QSSLoader
+from ui.construct.bases.abstract_widget import ModernWidget
 
-
-class Card(ABC, QListWidget, metaclass=AbstractWidgetMeta):
+class Card(QListWidget, ModernWidget):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet(QSSLoader(self).load())
         self.init_card()
 
     @abstractmethod

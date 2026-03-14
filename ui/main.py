@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         self.floating_ball = AgendaXFloatingBall()
         self.floating_ball.set_click_action(self._handle_ball_clicked)
         self.floating_ball.setIcon(os.path.join(get_res_path('icon'), 'icon.png'))
+        self.floating_ball.set_exit_action(self.stop)
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -65,6 +66,10 @@ class MainWindow(QMainWindow):
         self.floating_ball.show()
 
     def force_stop(self):
+        self.close()
+        QApplication.quit()
+
+    def stop(self):
         self.close()
         QApplication.quit()
 
