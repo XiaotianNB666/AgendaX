@@ -314,13 +314,3 @@ class AgendaXFloatingBall(QWidget):
                 self._current_opacity = 0.25
                 self._increasing = True
         self.setWindowOpacity(self._current_opacity)
-
-
-if __name__ == "__main__":
-    import sys
-
-    app = QApplication(sys.argv)
-    ball = AgendaXFloatingBall()
-    # ball.setIcon("path/to/your/icon.png")  # 替换为实际图标路径
-    ball.show()
-    sys.exit(app.exec_())

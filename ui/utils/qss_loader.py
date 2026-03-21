@@ -20,10 +20,10 @@ QSS_IGNORE = ('q_frame', 'qss_widget')
 
 
 class QSSLoader:
-    qw: type
+    qw: type[QWidget]
     qw_type: str
 
-    def __init__(self, qw: QWidget | type):
+    def __init__(self, qw: QWidget | type[QWidget]):
         if isinstance(qw, QWidget):
             self.qw = type(qw)
         elif issubclass(qw, QWidget):
@@ -33,16 +33,16 @@ class QSSLoader:
 
         self.qw_type = snake(self.qw.__name__)
 
-    def load(self, **kargs):
+    def load(self, is_load_self_only: bool = False, **kargs):
         """**kargs: 是qss中值替换操作"""
-        qss = self._load()
+        qss = self._load(is_load_self_only)
 
         for k, v in kargs.items():
             qss = qss.replace(f'/*${{{k}}}$*/', str(v))
 
         return qss
 
-    def _load(self) -> str:
+    def _load(self, is_load_self_only: bool = False) -> str:
         from ui.main import LOG
 
         global loaded, default_qss
@@ -53,13 +53,18 @@ class QSSLoader:
         qfile = QFile(qss_path)
 
         if not qfile.open(QIODevice.ReadOnly | QIODevice.Text):  # type: ignore
-            qss = self.load_from_parents()
-            if qss != '':
-                return qss
+            if not is_load_self_only:
+                qss = self.load_from_parents()
+                if qss != '':
+                    return qss
             LOG.error(f'cannot load qss[{self.qw_type}] from: {qss_path}')
             return default_qss
 
         self_qss: str = qfile.readAll().data().decode('utf-8')
+
+        if is_load_self_only:
+            return self_qss
+
         return self.load_from_parents() + '\n' + self_qss
 
     def load_from_parents(self) -> str:
@@ -82,6 +87,25 @@ class QSSLoader:
 
 
 @cache
-def load_qss(qw: QWidget | type, **kargs):
-    qssl = QSSLoader(qw).load(**kargs)
-    return qssl
+def load_qss(qw: QWidget | type, is_load_self_only: bool = False, **kargs):
+    qss = QSSLoader(qw).load(is_load_self_only, **kargs)
+    return qss
+
+
+@cache
+def load_qss_s(name: str, **kargs):
+    from ui.main import LOG
+
+    qss_path = path.join(get_res_path('stylesheets'), name + '.qss')
+    qfile = QFile(qss_path)
+
+    if not qfile.open(QIODevice.ReadOnly | QIODevice.Text):  # type: ignore
+        LOG.error(f'cannot load qss[{name}] from: {qss_path}')
+        return default_qss
+
+    qss: str = qfile.readAll().data().decode('utf-8')
+
+    for k, v in kargs.items():
+        qss = qss.replace(f'/*${{{k}}}$*/', str(v))
+
+    return qss
