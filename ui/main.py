@@ -1,5 +1,7 @@
 import sys
 import os
+from typing import override
+
 from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout
 from core.app import APP, register_force_stop
@@ -60,6 +62,7 @@ class MainWindow(QMainWindow):
             self.subject_layout.addWidget((sc := SubjectCard()))
             sc.init_size(container)
 
+    @override
     def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
         super().mouseDoubleClickEvent(a0)
         self.hide()
