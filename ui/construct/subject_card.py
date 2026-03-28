@@ -1,8 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QFont
 from ui.construct.bases.card import Card
 from ui.construct.widgets.AssignmentCard import AssignmentCard
+from ui.utils.qss_loader import load_qss_s
 
 
 class SubjectCard(Card):
@@ -17,15 +18,12 @@ class SubjectCard(Card):
             self.load()
 
     def init_card(self):
-        """
-        关键点：
-        - 不再 new QVBoxLayout(self)
-        - 直接使用 Card 的 layout
-        """
 
-        main_layout = self.layout()
-        if main_layout is None:
-            main_layout = QVBoxLayout(self)
+        main_layout = QHBoxLayout()
+        container = QWidget()
+        container.setLayout(main_layout)
+
+        self.set_center(container)
 
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(8)
@@ -33,7 +31,9 @@ class SubjectCard(Card):
         # ===== 学科标题 =====
         self._subject_label = QLabel(self._subject_name)
         self._subject_label.setObjectName("subjectLabel")
-        self._subject_label.setAlignment(Qt.AlignLeft)
+        self._subject_label.setAlignment(Qt.AlignCenter)
+        self._subject_label.setMaximumHeight(40)
+        self._subject_label.setStyleSheet(load_qss_s("subject_label_"))
 
         font = QFont()
         font.setPointSize(12)
@@ -43,15 +43,13 @@ class SubjectCard(Card):
 
         main_layout.addWidget(self._subject_label)
 
-        # ===== 作业容器 =====
         self._assignments_container = QWidget()
-        self._assignments_layout = QVBoxLayout(self._assignments_container)
+        self._assignments_layout = QHBoxLayout(self._assignments_container)
         self._assignments_layout.setContentsMargins(0, 0, 0, 0)
         self._assignments_layout.setSpacing(6)
 
         main_layout.addWidget(self._assignments_container)
 
-        # 拉伸：标题固定，作业区撑开
         main_layout.setStretch(main_layout.indexOf(self._subject_label), 0)
         main_layout.setStretch(main_layout.indexOf(self._assignments_container), 1)
 

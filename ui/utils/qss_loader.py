@@ -12,7 +12,7 @@ loaded: dict[type, str] = {}
 
 default_qss = """
 * {
-    background-color: #dddddd;
+    background-color: #f0f0f0;
 }
 """
 

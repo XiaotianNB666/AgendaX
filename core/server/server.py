@@ -3,6 +3,7 @@ import os
 import threading
 import time
 from dataclasses import dataclass, field
+from socket import socket
 
 from core.app import LOG
 from core.settings import Settings
@@ -38,9 +39,6 @@ class DatabaseHelper:
             LOG.info(f"Creating database: {db_path}")
         self._init_tables()
 
-    # =========================
-    # 表初始化
-    # =========================
     def _init_tables(self):
         LOG.info("Initializing database tables")
 
@@ -81,9 +79,6 @@ class DatabaseHelper:
 
         self.connection.commit()
 
-    # =========================
-    # 通用工具
-    # =========================
     def commit(self):
         self.connection.commit()
 
@@ -93,9 +88,6 @@ class DatabaseHelper:
     def close(self):
         self.connection.close()
 
-    # =========================
-    # ✅ ORM 统一接口
-    # =========================
     def _orm_fields(self, obj):
         return {
             "id": obj.id,
@@ -200,6 +192,7 @@ class AgendaXServer:
     _tick_per_second = 1.0
     _tasks: list[Task] = []
     _major_tasks: list[Task] = []
+    _clients: list[socket]
 
     def _exec(self, task: Task) -> None:
         start = time.time()

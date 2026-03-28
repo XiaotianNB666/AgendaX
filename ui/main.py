@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 from typing import override
 
 from PyQt5.QtGui import QMouseEvent
@@ -7,11 +8,14 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QWidget, QHB
 from core.app import APP, register_force_stop
 from core.crash_report import CrashReport
 from core.i18n import t
+from core.server.server import Assignment
+from core.settings import Settings
 from core.utils.logger.logging import getLogger
 from core.utils.path_utils import get_res_path
 from platforms.windows.winui import enable_win_blur_background
 from ui.construct.floating_ball import AgendaXFloatingBall
 from ui.construct.subject_card import SubjectCard
+from ui.construct.widgets.AssignmentCard import AssignmentCard
 from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
 from ui.construct.widgets.NumberPadWidget import NumberPadWidget
 from ui.construct.widgets.WhiteboardWidget import WhiteboardDialog
@@ -25,6 +29,8 @@ class MainWindow(QMainWindow):
     subject_layout_widget: QWidget
     subject_layout: QVBoxLayout
     floating_ball: AgendaXFloatingBall
+
+    settings: Settings = None
 
     def __init__(self) -> None:
         super().__init__()
@@ -61,9 +67,10 @@ class MainWindow(QMainWindow):
         v_layout.addStretch()
 
         container.setLayout(v_layout)
-        for _ in range(8):
+        for _ in range(2):
             self.subject_layout.addWidget((sc := SubjectCard('语文')))
             sc.init_size(container)
+            # sc.add_assignment(AssignmentCard(Assignment(start_time=time.time(), finish_time= time.time() + 60,)))
 
         w = WhiteboardDialog(container)
         w.show_dialog()

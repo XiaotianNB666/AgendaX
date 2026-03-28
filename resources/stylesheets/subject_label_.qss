@@ -1,0 +1,11 @@
+QLabel#subjectLabel {
+    border: 1px dashed #DCDCDC;
+    border-radius: 6px;
+    background-color: #F0F0F0F0;
+}
+
+QLabel#subjectLabel:hover {
+    border: 1px dashed #DCDCDC;
+    border-radius: 6px;
+    background-color: #DDDDDD;
+}

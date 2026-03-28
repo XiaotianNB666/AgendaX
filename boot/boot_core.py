@@ -4,9 +4,7 @@ import threading
 from core.app import LOG, APP, get_server_status, set_builtin, get_builtin
 from core.bases.resource_release import RESOURCE_RELEASE
 from core.crash_report import crash_handler, VAR_MONITOR
-from core.data_swap import set_current_server, CURRENT_SERVER
 from core.server.server import AgendaXServer
-from core.server.servers import BuiltinServer, get_builtin_server_address
 from platforms.windows.winutils import WSL, registerShutdown
 
 assert __name__ != "__main__", "This cannot be executed directly."
@@ -16,11 +14,6 @@ def init():
     atexit.register(clean)
     registerShutdown(clean)
     VAR_MONITOR.watch('boot_main@RESOURCE_RELEASE', RESOURCE_RELEASE)
-
-    if get_builtin():
-        set_current_server(BuiltinServer(get_builtin_server_address()))
-
-    VAR_MONITOR.watch("server", CURRENT_SERVER)
 
 
 def clean():
@@ -43,6 +36,5 @@ def main(is_builtin: bool) -> int:
             WSL.peek()
         else:
             server.main()
-
 
     return 0

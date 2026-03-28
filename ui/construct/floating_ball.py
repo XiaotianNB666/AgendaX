@@ -11,8 +11,6 @@ from ui.utils.qss_loader import QSSLoader
 
 
 class MenuBall(QWidget):
-    """展开的菜单悬浮球"""
-
     def __init__(self, parent: QWidget = None):
         super().__init__(parent)
         self._init_ui()

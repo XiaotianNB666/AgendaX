@@ -1,7 +1,8 @@
 import json
 import os.path
 
-from core.events import fire_event, SettingsLoadedEvent, register_event_handler, ReceiverGroup, ExitEvent, Receiver
+from core.events import fire_event, SettingsLoadedEvent, register_event_handler, ReceiverGroup, ExitEvent, Receiver, \
+    Event
 from core.utils.path_utils import get_work_dir
 
 
@@ -10,7 +11,7 @@ class Settings:
 
     def __init__(self, data: str | None = None):
         if not data is None and isinstance(data, str):
-            self.data = json.loads(data)
+            self._settings = json.loads(data)
         else:
             app_dir = get_work_dir('.app')
             os.makedirs(app_dir, exist_ok=True)
@@ -27,12 +28,12 @@ class Settings:
         register_event_handler(ExitEvent, self._save, Receiver.SETTINGS)
 
     def _create_default_settings(self) -> dict:
-        from core.app import APP
+        from core.app import version
         self._settings = {
-            'version': APP.version,
+            'version': version(),
             'subjects': []
         }
         return self._settings
 
-    def _save(self, SystemExit):
+    def _save(self, e: Event) -> None:
         pass

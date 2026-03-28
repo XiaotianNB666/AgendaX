@@ -5,12 +5,12 @@ from core.utils.app_thread import Task
 from core.utils.logger import logging
 
 
+def version() -> str:
+    return ''
+
+
 class APP:
     name: str = "AgendaX"
-
-    @property
-    def version(self=None) -> str:
-        return ''
 
 
 LOG_LEVEL: int = logging.DEBUG if '--debug' in sys.argv else logging.INFO
