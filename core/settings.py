@@ -15,8 +15,11 @@ class Settings:
             app_dir = get_work_dir('.app')
             os.makedirs(app_dir, exist_ok=True)
             if os.path.isfile(settings_file := os.path.join(app_dir, '.settings')):
-                with open(settings_file, 'r') as f:
-                    self._settings = json.load(f)
+                try:
+                    with open(settings_file, 'r') as f:
+                        self._settings = json.load(f)
+                except:
+                    self._settings = self._create_default_settings()
             else:
                 with open(settings_file, 'w') as f:
                     json.dump(self._create_default_settings(), f, ensure_ascii=False)

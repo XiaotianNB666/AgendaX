@@ -2,10 +2,10 @@ from PyQt5.QtWidgets import (QWidget, QGridLayout, QPushButton,
                              QLineEdit)
 from typing import Optional, override, Callable
 
-from ui.construct.bases.abstract_widget import ModernWidget
+from ui.construct.bases.abstract_widget import ModernWidgetLight
 
 
-class NumberPadWidget(ModernWidget):
+class NumberPadWidget(ModernWidgetLight):
     _on_finish: Callable[[int], None] | None = None
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:

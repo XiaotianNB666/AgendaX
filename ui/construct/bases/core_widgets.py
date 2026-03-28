@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
 
 class QSSWidget(QWidget):
     def load(self):
-        self.setStyleSheet(load_qss(self))
+        self.setStyleSheet(load_qss(self.__class__))
 
 
 class LayoutWidget(QWidget):

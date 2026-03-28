@@ -1,10 +1,12 @@
 from PyQt5.QtWidgets import (QFrame, QWidget, QVBoxLayout, QHBoxLayout,
-                             QPushButton, QApplication, QLabel)
-from PyQt5.QtCore import Qt, QPoint, QTimer
+                             QPushButton, QApplication, QLabel, QGraphicsOpacityEffect)
+from PyQt5.QtCore import Qt, QPoint, QTimer, QParallelAnimationGroup
 from PyQt5.QtGui import QMouseEvent
 from typing_extensions import override
 
-from typing import Optional, List, Any
+from typing import Optional, List
+
+from ui.construct.bases.abstract_widget import MPushButton, MLabel
 from ui.utils.qss_loader import load_qss_s
 
 
@@ -33,6 +35,7 @@ class InlineDialogWidget(QFrame):
         self.setFocusPolicy(Qt.StrongFocus)
 
         InlineDialogWidget._instances.append(self)
+        self.setStyleSheet(load_qss_s("modern_widget_light"))
 
         self._init_ui()
 
@@ -91,13 +94,14 @@ class InlineDialogWidget(QFrame):
         self._title_layout: QHBoxLayout = QHBoxLayout(self._title_bar)
         self._title_layout.setContentsMargins(10, 8, 10, 8)
 
-        self._title_label: QLabel = QLabel(self._title)
+        self._title_label: QLabel = MLabel(self._title)
         self._title_label.setObjectName("titleLabel")
         self._title_layout.addWidget(self._title_label)
 
         self._close_btn: QPushButton = QPushButton("×")
         self._close_btn.setObjectName("closeBtn")
         self._close_btn.setFixedSize(20, 20)
+        self._close_btn.setCursor(Qt.PointingHandCursor)
         self._close_btn.clicked.connect(self.hide_dialog)
         self._title_layout.addStretch()
         self._title_layout.addWidget(self._close_btn)

@@ -12,6 +12,9 @@ from core.utils.path_utils import get_res_path
 from platforms.windows.winui import enable_win_blur_background
 from ui.construct.floating_ball import AgendaXFloatingBall
 from ui.construct.subject_card import SubjectCard
+from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
+from ui.construct.widgets.NumberPadWidget import NumberPadWidget
+from ui.construct.widgets.WhiteboardWidget import WhiteboardDialog
 
 LOG = getLogger(f'{APP.name}-ui')
 
@@ -59,11 +62,18 @@ class MainWindow(QMainWindow):
 
         container.setLayout(v_layout)
         for _ in range(8):
-            self.subject_layout.addWidget((sc := SubjectCard()))
+            self.subject_layout.addWidget((sc := SubjectCard('语文')))
             sc.init_size(container)
+
+        w = WhiteboardDialog(container)
+        w.show_dialog()
 
     @override
     def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
+        widget_under_mouse = QApplication.widgetAt(a0.globalPos())
+        if widget_under_mouse is not None and widget_under_mouse != self and widget_under_mouse != self.centralWidget():
+            return
+
         super().mouseDoubleClickEvent(a0)
         self.hide()
         self.floating_ball.show()

@@ -5,8 +5,10 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QPainter, QPen, QColor, QPaintEvent, QMouseEvent
 
-from InlineDialogWidget import InlineDialogWidget
+from ui.construct.bases.abstract_widget import MPushButton, ModernWidgetLight
+from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
 from ui.utils.qss_loader import load_qss_s
+from core.i18n import t
 
 
 class WhiteboardWidget(QWidget):
@@ -41,37 +43,33 @@ class WhiteboardWidget(QWidget):
         toolbar.setSpacing(10)
 
         # 笔按钮
-        self._pen_btn = QPushButton("笔")
-        self._pen_btn.setObjectName("toolBtn")
+        self._pen_btn = MPushButton(t('ui.whiteboard_widget.pen'))
         self._pen_btn.setCheckable(True)
         self._pen_btn.setChecked(True)
         self._pen_btn.clicked.connect(self._on_pen_clicked)
         toolbar.addWidget(self._pen_btn)
 
         # 橡皮擦按钮
-        self._eraser_btn = QPushButton("橡皮")
-        self._eraser_btn.setObjectName("toolBtn")
+        self._eraser_btn = MPushButton(t('ui.whiteboard_widget.eraser'))
         self._eraser_btn.setCheckable(True)
         self._eraser_btn.clicked.connect(self._on_eraser_clicked)
         toolbar.addWidget(self._eraser_btn)
 
         # 撤销按钮
-        self._undo_btn = QPushButton("撤销上一步")
-        self._undo_btn.setObjectName("toolBtn")
+        self._undo_btn = MPushButton(t('ui.whiteboard_widget.undo'))
         self._undo_btn.clicked.connect(self._undo_last_step)
         toolbar.addWidget(self._undo_btn)
 
         toolbar.addStretch()
 
         # 确定按钮
-        self._confirm_btn = QPushButton("确定")
-        self._confirm_btn.setObjectName("actionBtn")
+        self._confirm_btn = MPushButton(t('ui.whiteboard_widget.confirm'))
+        self._confirm_btn.clicked.connect(self._on_confirm)
         self._confirm_btn.clicked.connect(self._on_confirm)
         toolbar.addWidget(self._confirm_btn)
 
         # 取消按钮
-        self._cancel_btn = QPushButton("取消")
-        self._cancel_btn.setObjectName("actionBtn")
+        self._cancel_btn = MPushButton(t('ui.whiteboard_widget.cancel'))
         self._cancel_btn.clicked.connect(self._on_cancel)
         toolbar.addWidget(self._cancel_btn)
 
@@ -81,13 +79,10 @@ class WhiteboardWidget(QWidget):
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Sunken)
-        separator.setStyleSheet("background-color: #ddd;")
         main_layout.addWidget(separator)
 
         # 绘图区
-        self._drawing_area = QWidget()
-        self._drawing_area.setObjectName("drawingArea")
-        self._drawing_area.setStyleSheet("background-color: white;rder: 1px solid #ccc;")
+        self._drawing_area = ModernWidgetLight()
         self._drawing_area.setMinimumSize(300, 200)
         self._drawing_area.paintEvent = self._drawing_area_paint_event
         self._drawing_area.mousePressEvent = self._drawing_area_mouse_press_event
@@ -183,7 +178,7 @@ class WhiteboardWidget(QWidget):
             self._paths.append(self._temp_image)
             self._temp_image = None
         self._drawing_area.update()
-        self.parent().hide_dialog()
+        self._parent.hide_dialog()
 
     def clear(self):
         self._paths.clear()
@@ -197,7 +192,7 @@ class WhiteboardWidget(QWidget):
 
 class WhiteboardDialog(InlineDialogWidget):
 
-    def __init__(self, parent=None, title="board"):
+    def __init__(self, parent=None, title='Whiteboard'):
         super().__init__(parent, title, draggable=True, show_title_bar=True)
 
         self.setMinimumSize(400, 300)
@@ -207,4 +202,3 @@ class WhiteboardDialog(InlineDialogWidget):
 
         self.set_content(self._whiteboard)
 
-        self.set_style_sheet(load_qss_s("whiteboard_widget"))

@@ -19,6 +19,14 @@
     "ui": {
         "main_window": {
             "show": "MainWindow is created."
+        },
+        "whiteboard_widget": {
+            "pen": "pen",
+            "eraser": "eraser",
+            "undo": "undo",
+            "confirm": "confirm",
+            "cancel": "cancel",
+            "title": "whiteboard"
         }
     }
 }

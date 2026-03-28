@@ -22,6 +22,14 @@
             "error": {
                 "init": "无法启动主窗口: 无法初始化UI"
             }
+        },
+        "whiteboard_widget": {
+            "pen": "🖊",
+            "eraser": "⚪",
+            "undo": "撤销",
+            "confirm": "确认",
+            "cancel": "取消",
+            "title": "白板"
         }
     }
 }

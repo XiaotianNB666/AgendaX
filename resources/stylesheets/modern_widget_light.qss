@@ -1,6 +1,6 @@
 /* ==================== 基础设置 ==================== */
 * {
-/*    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;*/
+    font-family: "Segoe UI";
     outline: none;
 }
 
