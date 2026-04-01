@@ -1,5 +1,6 @@
 import json
 import os.path
+from typing import Any
 
 from core.events import fire_event, SettingsLoadedEvent, register_event_handler, ReceiverGroup, ExitEvent, Receiver, \
     Event
@@ -37,3 +38,47 @@ class Settings:
 
     def _save(self, e: Event) -> None:
         pass
+
+    def get(self, path: str, default: Any = None) -> Any:
+        """
+        若路径中含有数字，先判断前面的是否为list，如 /a/b/0/c 则判断b是否为list，若是，则/a/b/0就是/a/b[0]；否则，解析为dict的key
+        遇到错误返回 KeyError
+        """
+        try:
+            if not path:
+                raise KeyError("Empty path")
+
+            current = self._settings
+            parts = path.split("/")
+
+            for part in parts:
+                if part == "":
+                    raise KeyError(f"Invalid path: {path}")
+
+                if part.isdigit():
+                    idx = int(part)
+
+                    if not isinstance(current, list):
+                        raise KeyError(
+                            f"Expected list at '{part}', got {type(current).__name__}"
+                        )
+
+                    try:
+                        current = current[idx]
+                    except IndexError:
+                        raise KeyError(f"Index {idx} out of range")
+
+                else:
+                    if not isinstance(current, dict):
+                        raise KeyError(
+                            f"Expected dict at '{part}', got {type(current).__name__}"
+                        )
+
+                    if part not in current:
+                        raise KeyError(f"Key '{part}' not found")
+
+                    current = current[part]
+
+            return current
+        except KeyError:
+            return default

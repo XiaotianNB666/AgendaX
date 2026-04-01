@@ -1,6 +1,7 @@
 import sys
-from typing import NoReturn, Callable
+from typing import NoReturn, Callable, Optional
 
+from core.server.server import AgendaXServer
 from core.utils.app_thread import Task
 from core.utils.logger import logging
 
@@ -16,20 +17,22 @@ class APP:
 LOG_LEVEL: int = logging.DEBUG if '--debug' in sys.argv else logging.INFO
 LOG: logging.Logger = logging.getLogger(APP.name)
 
-logging.configure(LOG_LEVEL)
+def init_app() -> None:
+    logging.configure(LOG_LEVEL)
+
 
 IS_BUILTIN = False
-SERVER_STATUS = True  # True -> running
+SERVER: Optional[AgendaXServer] = None  # True -> running
 STOP_TASKS: list[Callable] = []
 
 
-def set_server_status(status: bool) -> None:
-    global SERVER_STATUS
-    SERVER_STATUS = status
+def set_server(server: AgendaXServer) -> None:
+    global SERVER
+    SERVER = server
 
 
-def get_server_status() -> bool:
-    return SERVER_STATUS
+def get_server() -> Optional[AgendaXServer]:
+    return SERVER
 
 
 def set_builtin(b: bool) -> None:

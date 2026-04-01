@@ -1,2 +1,3 @@
 python-i18n
 pyqt5
+sqlmodel

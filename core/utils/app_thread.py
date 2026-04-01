@@ -27,6 +27,9 @@ class Task:
     def join(self):
         self.thread.join()
 
+    def execute_in_this_thread(self, *args):
+        self.executable(*args)
+
     def stop(self):  # subclass override it
         ...
 

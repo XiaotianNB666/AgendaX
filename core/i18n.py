@@ -76,7 +76,7 @@ def t(key: str, **kwargs) -> str:
     Returns:
         翻译后的字符串
     """
-    if (not _ok):
+    if not _ok:
         init_i18n()
     return i18n.t(key, **kwargs)
 

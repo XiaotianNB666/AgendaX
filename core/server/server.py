@@ -1,13 +1,19 @@
-import sqlite3
-import os
-import threading
+import signal
+import sys
 import time
+import os
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from socket import socket
+from enum import Enum, auto
+from socket import socket, AF_INET, SOCK_STREAM
+from typing import Callable, Sequence
 
-from core.app import LOG
+from sqlalchemy import delete
+from sqlmodel import create_engine, Session, select, SQLModel
+
+from core.db.models import AssignmentTable, AssignmentRecord, ExerciseSubjectTable
+from core.events import register_event_handler, ExitEvent, fire_event, Event
 from core.settings import Settings
-from core.utils.app_thread import Task
 from core.utils.path_utils import get_work_dir
 
 """
@@ -17,6 +23,9 @@ AssignmentRecord(id, subject, data_type, data, start_time, finish_time, finish_t
 """
 
 
+# =========================
+# Assignment DTO
+# =========================
 @dataclass
 class Assignment:
     subject: str
@@ -28,212 +37,258 @@ class Assignment:
     id: int | None = None
 
 
+# =========================
+# Database Helper (SQLModel)
+# =========================
 class DatabaseHelper:
     def __init__(self):
         db_path = os.path.join(get_work_dir('.app'), '.data')
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-        self.connection = sqlite3.connect(db_path)
-        self.cursor = self.connection.cursor()
-        if not os.path.exists(db_path):
-            LOG.info(f"Creating database: {db_path}")
-        self._init_tables()
-
-    def _init_tables(self):
-        LOG.info("Initializing database tables")
-
-        self.cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS AssignmentTable
-                            (
-                                id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                                subject          TEXT NOT NULL,
-                                data_type        TEXT NOT NULL,
-                                data             TEXT,
-                                start_time       REAL,
-                                finish_time      REAL,
-                                finish_time_type TEXT
-                            )
-                            """)
-
-        self.cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS AssignmentRecord
-                            (
-                                id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                                subject          TEXT NOT NULL,
-                                data_type        TEXT NOT NULL,
-                                data             TEXT,
-                                start_time       REAL,
-                                finish_time      REAL,
-                                finish_time_type TEXT
-                            )
-                            """)
-
-        self.cursor.execute("""
-                            CREATE TABLE IF NOT EXISTS ExerciseSubjectTable
-                            (
-                                exercise TEXT NOT NULL,
-                                subject  TEXT NOT NULL,
-                                PRIMARY KEY (exercise, subject)
-                            )
-                            """)
-
-        self.connection.commit()
-
-    def commit(self):
-        self.connection.commit()
-
-    def rollback(self):
-        self.connection.rollback()
-
-    def close(self):
-        self.connection.close()
-
-    def _orm_fields(self, obj):
-        return {
-            "id": obj.id,
-            "subject": obj.subject,
-            "data_type": obj.data_type,
-            "data": obj.data,
-            "start_time": obj.start_time,
-            "finish_time": obj.finish_time,
-            "finish_time_type": obj.finish_time_type,
-        }
-
-    def add(self, obj: Assignment, table: str = "AssignmentTable"):
-        """
-        通用 ORM 插入
-        helper.add(assignment, table="AssignmentRecord")
-        """
-        if table not in ("AssignmentTable", "AssignmentRecord"):
-            raise ValueError(f"Invalid table name: {table}")
-
-        fields = self._orm_fields(obj)
-        columns = [k for k in fields if k != "id" or fields[k] is not None]
-        values = [fields[k] for k in columns]
-
-        placeholders = ", ".join(["?"] * len(columns))
-
-        sql = f"""
-        INSERT INTO {table} ({', '.join(columns)})
-        VALUES ({placeholders})
-        """
-
-        self.cursor.execute(sql, values)
-        self.commit()
-        return self.cursor.lastrowid
-
-    # =========================
-    # Assignment 查询
-    # =========================
-    def get_by_subject(self, subject: str, table: str = "AssignmentTable") -> list[Assignment]:
-        if table not in ("AssignmentTable", "AssignmentRecord"):
-            raise ValueError(f"Invalid table name: {table}")
-
-        self.cursor.execute(
-            f"SELECT * FROM {table} WHERE subject = ?",
-            (subject,)
+        self.engine = create_engine(
+            f"sqlite:///{db_path}",
+            echo=False
         )
 
-        rows = self.cursor.fetchall()
-        result = []
+        SQLModel.metadata.create_all(self.engine)
 
-        for row in rows:
-            result.append(Assignment(
-                id=row[0],
-                subject=row[1],
-                data_type=row[2],
-                data=row[3],
-                start_time=row[4],
-                finish_time=row[5],
-                finish_time_type=row[6]
-            ))
+        from core.app import LOG
+        LOG.info(f"Database initialized at {db_path}")
 
-        return result
+    def add(self, obj: Assignment, table: str = "AssignmentTable") -> int:
+        with Session(self.engine) as session:
+            model = {
+                "AssignmentTable": AssignmentTable,
+                "AssignmentRecord": AssignmentRecord,
+            }.get(table)
 
-    # =========================
-    # ExerciseSubjectTable（保留但未在 ORM 中使用）
-    # =========================
-    def bind_exercise_subject(self, exercise, subject):
-        self.cursor.execute("""
-        INSERT OR REPLACE INTO ExerciseSubjectTable (exercise, subject)
-        VALUES (?, ?)
-        """, (exercise, subject))
-        self.commit()
+            if not model:
+                raise ValueError(f"Invalid table name: {table}")
 
-    def unbind_exercise_subject(self, exercise, subject):
-        self.cursor.execute("""
-                            DELETE
-                            FROM ExerciseSubjectTable
-                            WHERE exercise = ?
-                              AND subject = ?
-                            """, (exercise, subject))
-        self.commit()
+            instance = model(
+                subject=obj.subject,
+                data_type=obj.data_type,
+                data=obj.data,
+                start_time=obj.start_time,
+                finish_time=obj.finish_time,
+                finish_time_type=obj.finish_time_type,
+            )
 
-    def get_subjects_by_exercise(self, exercise):
-        self.cursor.execute(
-            "SELECT subject FROM ExerciseSubjectTable WHERE exercise = ?",
-            (exercise,)
-        )
-        return [row[0] for row in self.cursor.fetchall()]
+            session.add(instance)
+            session.commit()
+            session.refresh(instance)
+            return instance.id
 
-    def get_exercises_by_subject(self, subject):
-        self.cursor.execute(
-            "SELECT exercise FROM ExerciseSubjectTable WHERE subject = ?",
-            (subject,)
-        )
-        return [row[0] for row in self.cursor.fetchall()]
+    def get_by_subject(
+        self,
+        subject: str,
+        table: str = "AssignmentTable"
+    ) -> list[Assignment]:
+        with Session(self.engine) as session:
+            model = {
+                "AssignmentTable": AssignmentTable,
+                "AssignmentRecord": AssignmentRecord,
+            }.get(table)
+
+            if not model:
+                raise ValueError(f"Invalid table name: {table}")
+
+            stmt = select(model).where(model.subject == subject)
+            rows = session.exec(stmt).all()
+
+            return [
+                Assignment(
+                    id=row.id,
+                    subject=row.subject,
+                    data_type=row.data_type,
+                    data=row.data,
+                    start_time=row.start_time,
+                    finish_time=row.finish_time,
+                    finish_time_type=row.finish_time_type,
+                )
+                for row in rows
+            ]
+
+    def bind_exercise_subject(self, exercise: str, subject: str):
+        with Session(self.engine) as session:
+            obj = ExerciseSubjectTable(exercise=exercise, subject=subject)
+            session.merge(obj)
+            session.commit()
+
+    def unbind_exercise_subject(self, exercise: str, subject: str):
+        with Session(self.engine) as session:
+            stmt = (
+                delete(ExerciseSubjectTable)
+                .where(
+                    ExerciseSubjectTable.exercise == exercise,
+                    ExerciseSubjectTable.subject == subject
+                )
+            )
+            session.exec(stmt)
+            session.commit()
+
+    def get_subjects_by_exercise(self, exercise: str) -> Sequence[str]:
+        with Session(self.engine) as session:
+            stmt = select(ExerciseSubjectTable.subject).where(
+                ExerciseSubjectTable.exercise == exercise
+            )
+            return session.exec(stmt).all()
+
+    def get_exercises_by_subject(self, subject: str) -> Sequence[str]:
+        with Session(self.engine) as session:
+            stmt = select(ExerciseSubjectTable.exercise).where(
+                ExerciseSubjectTable.subject == subject
+            )
+            return session.exec(stmt).all()
+
+
+class ServerStartedEvent(Event):
+    def __init__(self, server):
+        super().__init__()
+        self._server = server
+
+    def get_value(self):
+        return self._server
+
+# =========================
+# Server Lifecycle
+# =========================
+class ServerState(Enum):
+    INIT = auto()
+    RUNNING = auto()
+    STOPPING = auto()
+    STOPPED = auto()
 
 
 class AgendaXServer:
-    _event = threading.Event()
-    _time_out = 0.0
-    _time_out_times = 0
-    _tick_second = 0.0
-    _tick_per_second = 1.0
-    _tasks: list[Task] = []
-    _major_tasks: list[Task] = []
-    _clients: list[socket]
-
-    def _exec(self, task: Task) -> None:
-        start = time.time()
-        task.execute()
-        end = time.time()
-        self._tick_second += end - start
-        print(self._tick_second)
+    _port = 2000
+    _state = ServerState.INIT
 
     def __init__(self):
+        from core.app import LOG
+        self.LOG = LOG
+
         self.database = DatabaseHelper()
         self.settings = Settings()
 
-    def _resume(self):
-        self._event.set()
+        self._socket = socket(AF_INET, SOCK_STREAM)
+        self._clients: list[socket] = []
 
-    def main(self):
-        is_time_out = False
-        for major_task in self._major_tasks:
-            if is_time_out:
+        self._executor = ThreadPoolExecutor(
+            max_workers=self.settings.get("max_workers", 10),
+            thread_name_prefix="AgendaXWorker"
+        )
+
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
+        register_event_handler(ExitEvent, lambda e:self.shutdown())
+        fire_event(ServerStartedEvent(self))
+
+    # =========================
+    # State
+    # =========================
+    @property
+    def running(self) -> bool:
+        return self._state == ServerState.RUNNING
+
+    # =========================
+    # Lifecycle
+    # =========================
+    def start(self):
+        if self._state != ServerState.INIT:
+            raise RuntimeError("Server already started")
+
+        self.LOG.info("Starting AgendaXServer...")
+        self._state = ServerState.RUNNING
+        self.handle_connection()
+
+    def shutdown(self):
+        if self._state != ServerState.RUNNING:
+            return
+
+        self.LOG.info("Stopping AgendaXServer...")
+        self._state = ServerState.STOPPING
+
+        self._executor.shutdown(wait=True)
+
+        try:
+            self._socket.close()
+        except OSError:
+            pass
+
+        self._state = ServerState.STOPPED
+        self.LOG.info("AgendaXServer stopped.")
+
+    # =========================
+    # Signal
+    # =========================
+    def _signal_handler(self, signum, frame):
+        self.LOG.warning(f"Received signal {signum}, initiating shutdown...")
+        self.shutdown()
+        sys.exit(0)
+
+    # =========================
+    # Task Scheduler
+    # =========================
+    def run_later(self, func: Callable):
+        if not self.running:
+            self.LOG.warning("Ignored run_later call while server not running")
+            return
+
+        try:
+            self._executor.submit(func)
+        except RuntimeError as e:
+            self.LOG.error(f"Failed to schedule task: {e}")
+
+    # =========================
+    # Socket Accept
+    # =========================
+    def handle_connection(self):
+        self._socket.bind(("0.0.0.0", self._port))
+        self._socket.listen(5)
+
+        # 防止 Windows 10038
+        self._socket.settimeout(1.0)
+
+        self.LOG.info(f"Listening on port: {self._port}")
+
+        while self.running:
+            try:
+                client_socket, addr = self._socket.accept()
+                self.LOG.info(f"Accepted connection from {addr}")
+
+                self.run_later(
+                    lambda cs=client_socket, ca=addr:
+                        self._handle_client(cs, ca)
+                )
+
+            except TimeoutError:
+                continue
+
+            except OSError as e:
+                if self.running:
+                    self.LOG.error(f"Socket error: {e}")
                 break
-            self._exec(major_task)
-            is_time_out = self.handle_timeout()
 
-        for task in self._tasks:
-            if is_time_out:
-                break
-            self._exec(task)
-            is_time_out = self.handle_timeout()
+    # =========================
+    # Client Handler
+    # =========================
+    def _handle_client(self, client_socket: socket, addr: tuple):
+        self._clients.append(client_socket)
 
-        if not is_time_out:
-            self._event.wait(self._tick_per_second - self._tick_second)
+        try:
+            from core.app import APP, version
+            client_socket.send(
+                f"{APP.name}[{version()}]".encode("utf-8")
+            )
 
-    def handle_timeout(self):
-        if (len(self._major_tasks) > 0 or len(self._tasks) > 0) and self._tick_second > self._tick_per_second:
-            self._time_out_times += 1
-            self._time_out += self._tick_second - self._tick_per_second
-            self._tick_second = 0.0
-            if self._time_out_times >= 50:
-                LOG.warning(
-                    f"Can't keep up! Is the server overloaded? Running {int(self._time_out * 1000)} ms or {self._time_out // self._tick_per_second} ticks behind.")
-                self._time_out_times = 0
-                self._time_out = 0.0
-            return True
-        return False
+            while self.running:
+                data = client_socket.recv(1024)
+                if not data:
+                    break
+
+        finally:
+            client_socket.close()
+            self._clients.remove(client_socket)
+            self.LOG.info(f"Client disconnected: {addr}")

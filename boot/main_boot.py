@@ -1,6 +1,6 @@
 from core.crash_report import crash_handler
 from boot.boot_core import main as maincore
-from core.app import APP, set_server_status
+from core.app import APP, get_server
 from core.utils.app_thread import Task
 
 
@@ -9,7 +9,9 @@ from core.utils.app_thread import Task
 def ui_main() -> int:
     from ui.main import main
     result = main()
-    set_server_status(False)
+    sv = get_server()
+    if sv:
+        sv.shutdown()
     return result
 
 
@@ -18,5 +20,6 @@ ui: Task = Task(f'{APP.name}-ui', ui_main, task_type=Task.APP_MAIN)
 
 
 def main():
-    server.execute()
     ui.execute()
+    server.execute_in_this_thread()
+
