@@ -34,7 +34,6 @@ class SubjectCard(Card):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(8)
 
-        # ===== 学科标题 =====
         self._subject_label = QLabel(self._subject_name)
         self._subject_label.setObjectName("subjectLabel")
         self._subject_label.setAlignment(Qt.AlignCenter)
@@ -65,10 +64,7 @@ class SubjectCard(Card):
         main_layout.setStretch(main_layout.indexOf(self._assignments_container), 1)
 
     def init_size(self, obj: QSize = None):
-        if obj is not None:
-            self.setMinimumWidth(int(obj.width() * 0.8))
-        else:
-            self.setMinimumWidth(300)
+        ...
 
     def set(self, child: QWidget):
         # 保持接口兼容
