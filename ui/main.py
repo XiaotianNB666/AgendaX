@@ -1,11 +1,12 @@
-import sys
 import os
+import sys
 from dataclasses import dataclass
 from typing import Optional
 
 from PyQt5.QtCore import QTimer, QThread
 from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout
+
 from core.app import APP, register_stop, get_server, set_server, get_property
 from core.crash_report import CrashReport
 from core.events import register_event_handler, ExitEvent
@@ -13,13 +14,11 @@ from core.i18n import t
 from core.server.server import AgendaXServer, ServerStartedEvent, Assignment
 from core.settings import Settings
 from core.utils.logger.logging import getLogger
-from core.utils.path_utils import get_res_path, get_work_dir
+from core.utils.path_utils import get_res_path
 from platforms.windows.winui import enable_win_blur_background
 from ui.construct.floating_ball import AgendaXFloatingBall
 from ui.construct.subject_card import SubjectCard
-from ui.construct.widgets.WhiteboardWidget import WhiteboardDialog
 from ui.utils.RemoteServer import RemoteServer
-
 
 LOG = getLogger(f'{APP.name}-ui')
 UICRASH = CrashReport()
@@ -149,7 +148,9 @@ class MainWindow(QMainWindow):
         if settings_obj:
             for _subject in settings_obj.get('subjects', []):
                 _subject: dict
-                self.subjects.append(Subject(_subject.get('id'), _subject.get('name'), _subject.get('display_name', _subject.get('name')), _subject.get('color', '#FFFFFF')))
+                self.subjects.append(Subject(
+                    _subject.get('id'), _subject.get('name'), _subject.get('display_name', _subject.get('name')), _subject.get('color', '#FFFFFF'))
+                )
 
         for subject in self.subjects:
             if not subject.assignments_card:

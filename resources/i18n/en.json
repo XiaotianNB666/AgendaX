@@ -27,6 +27,10 @@
             "confirm": "confirm",
             "cancel": "cancel",
             "title": "whiteboard"
+        },
+        "assignment": {
+                "title": "Add Assignment",
+                "submit": "OK"
         }
     }
 }

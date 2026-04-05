@@ -16,11 +16,12 @@ class SubjectCard(Card):
         self._subject_name = subject_name
         self._assignment_cards = []
 
+        self.settings = get_property('settings', _type = Settings)
         super().__init__()
         if auto_load:
             self.load()
+            self.setStyleSheet(load_qss_s("subject_card", self.settings.get('theme', 'classic') if self.settings else None))
 
-        self.settings = get_property('settings', _type = Settings)
 
     def init_card(self):
 
@@ -37,12 +38,13 @@ class SubjectCard(Card):
         self._subject_label = QLabel(self._subject_name)
         self._subject_label.setObjectName("subjectLabel")
         self._subject_label.setAlignment(Qt.AlignCenter)
-        self._subject_label.setMaximumHeight(40)
-        # if self.settings:
-        #     theme = self.settings.get('theme', 'classic')
-        # else:
-        #     theme = None
-        self._subject_label.setStyleSheet(load_qss_s("subject_label_"))
+        self._subject_label.setFixedHeight(50)
+        self._subject_label.setFixedWidth(50)
+        if self.settings:
+            theme = self.settings.get('theme', 'classic')
+        else:
+            theme = None
+        self._subject_label.setStyleSheet(load_qss_s("subject_label_", theme))
 
         font = QFont()
         font.setPointSize(12)

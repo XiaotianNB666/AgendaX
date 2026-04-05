@@ -109,9 +109,9 @@ def load_qss_s(name: str, theme: Optional[str] = None, **kargs):
             theme = ''
 
     if theme:
-        theme = f'theme/{theme}'
+        theme = ['themes', theme]
 
-    qss_path = path.join(get_res_path('stylesheets'), theme, name + '.qss')
+    qss_path = path.join(get_res_path('stylesheets'), *theme, name + '.qss')
     qfile = QFile(qss_path)
 
     if not qfile.open(QIODevice.ReadOnly | QIODevice.Text):  # type: ignore

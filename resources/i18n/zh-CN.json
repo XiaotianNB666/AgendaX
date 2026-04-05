@@ -30,6 +30,10 @@
             "confirm": "确认",
             "cancel": "取消",
             "title": "白板"
+        },
+        "assignment": {
+                "title": "添加作业",
+                "submit": "完成"
         }
     }
 }
