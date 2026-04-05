@@ -7,10 +7,18 @@ from core.events import fire_event, SettingsLoadedEvent, register_event_handler,
 from core.utils.path_utils import get_work_dir
 
 
+class SettingsSavedEvent(Event):
+    def __init__(self, settings: dict):
+        self.settings = settings
+    def get_value(self) -> Any:
+        return self.settings
+
+
 class Settings:
     _settings: dict
 
     def __init__(self, data: str | None = None):
+        from core.app import set_property
         if not data is None and isinstance(data, str):
             self._settings = json.loads(data)
         else:
@@ -18,7 +26,7 @@ class Settings:
             os.makedirs(app_dir, exist_ok=True)
             if os.path.isfile(settings_file := os.path.join(app_dir, '.settings')):
                 try:
-                    with open(settings_file, 'r') as f:
+                    with open(settings_file, 'r', encoding='utf-8') as f:
                         self._settings = json.load(f)
                 except:
                     self._settings = self._create_default_settings()
@@ -28,16 +36,22 @@ class Settings:
         fire_event(SettingsLoadedEvent(self._settings), ReceiverGroup.SERVER)
         register_event_handler(ExitEvent, self._save, Receiver.SETTINGS)
 
+        set_property('settings', self, Settings)
+
     def _create_default_settings(self) -> dict:
         from core.app import version
         self._settings = {
             'version': version(),
-            'subjects': []
+            'subjects': [],
+            'theme': 'classic'
         }
         return self._settings
 
     def _save(self, e: Event) -> None:
-        pass
+        with open(os.path.join(get_work_dir('.app'), '.settings'), 'w', encoding='utf-8') as f:
+            s = json.dumps(self._settings, ensure_ascii=False)
+            f.write(s)
+        fire_event(SettingsSavedEvent(self._settings), ReceiverGroup.SERVER)
 
     def get(self, path: str, default: Any = None) -> Any:
         """

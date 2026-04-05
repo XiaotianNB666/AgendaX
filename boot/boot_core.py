@@ -1,7 +1,6 @@
 import atexit
-import threading
 
-from core.app import LOG, APP, get_server, set_server, set_builtin, get_builtin, init_app
+from core.app import LOG, APP, set_server, set_builtin, init_app
 from core.bases.resource_release import RESOURCE_RELEASE
 from core.crash_report import crash_handler, VAR_MONITOR
 from core.server.server import AgendaXServer

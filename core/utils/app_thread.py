@@ -35,12 +35,12 @@ class Task:
 
 
 def __static_exec__(task: Task, *args) -> int:
-    from core.app import APP, register_force_stop
+    from core.app import APP, register_stop
     if Task.MIN < task.task_type <= Task.MAJOR:
         task.LOGGER.info(f"executing a {'major' if task.task_type == Task.MAJOR else ''} task[{task.thread.name}]")
     elif task.task_type == Task.APP_MAIN:
         task.LOGGER.info(f"Starting {APP.name} APP.")
-    register_force_stop(task)
+    register_stop(task)
     task.executable(*args)
     if Task.MIN < task.task_type <= Task.MAJOR:
         task.LOGGER.info(f"{'major' if task.task_type == Task.MAJOR else ''} task[{task.thread.name}] finished.")

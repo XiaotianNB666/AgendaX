@@ -234,6 +234,10 @@ class Logger(ResourceReleasable):
         if self.file_handler:
             self.file_handler.close()
 
+    @override
+    def __str__(self):
+        return f'<Logger: {self.name}>'
+
 
 # ============ 全局管理器 ============
 

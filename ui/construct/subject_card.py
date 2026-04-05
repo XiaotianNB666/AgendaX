@@ -1,6 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QFont
+
+from core.app import get_property
+from core.settings import Settings
 from ui.construct.bases.card import Card
 from ui.construct.widgets.AssignmentCard import AssignmentCard
 from ui.utils.qss_loader import load_qss_s
@@ -16,6 +19,8 @@ class SubjectCard(Card):
         super().__init__()
         if auto_load:
             self.load()
+
+        self.settings = get_property('settings', _type = Settings)
 
     def init_card(self):
 
@@ -33,6 +38,10 @@ class SubjectCard(Card):
         self._subject_label.setObjectName("subjectLabel")
         self._subject_label.setAlignment(Qt.AlignCenter)
         self._subject_label.setMaximumHeight(40)
+        # if self.settings:
+        #     theme = self.settings.get('theme', 'classic')
+        # else:
+        #     theme = None
         self._subject_label.setStyleSheet(load_qss_s("subject_label_"))
 
         font = QFont()

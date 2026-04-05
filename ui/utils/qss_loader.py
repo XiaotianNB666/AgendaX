@@ -1,10 +1,13 @@
 from argparse import ArgumentTypeError
 from functools import cache
 from os import path
+from typing import Optional
 
 from PyQt5.QtCore import QFile, QIODevice
 from PyQt5.QtWidgets import QWidget
 
+from core.events import SettingsLoadedEvent, register_event_handler
+from core.settings import Settings
 from core.utils.path_utils import get_res_path
 from core.utils.string_utils import snake
 
@@ -17,6 +20,7 @@ default_qss = """
 """
 
 QSS_IGNORE = ('q_frame', 'qss_widget')
+SETTINGS: Optional[Settings] = None
 
 
 class QSSLoader:
@@ -34,7 +38,6 @@ class QSSLoader:
         self.qw_type = snake(self.qw.__name__)
 
     def load(self, is_load_self_only: bool = False, **kargs):
-        """**kargs: 是qss中值替换操作"""
         qss = self._load(is_load_self_only)
 
         for k, v in kargs.items():
@@ -42,14 +45,17 @@ class QSSLoader:
 
         return qss
 
-    def _load(self, is_load_self_only: bool = False) -> str:
+    def _load(self, is_load_self_only: bool = False, theme: Optional[str] = '') -> str:
         from ui.main import LOG
 
         global loaded, default_qss
         if self.qw in loaded:
             return loaded[self.qw]
 
-        qss_path = path.join(get_res_path('stylesheets'), self.qw_type + '.qss')
+        if theme:
+            theme = f'theme/{theme}'
+
+        qss_path = path.join(get_res_path('stylesheets'), theme, self.qw_type + '.qss')  # 找到qss文件
         qfile = QFile(qss_path)
 
         if not qfile.open(QIODevice.ReadOnly | QIODevice.Text):  # type: ignore
@@ -93,10 +99,19 @@ def load_qss(qw: QWidget | type, is_load_self_only: bool = False, **kargs):
 
 
 @cache
-def load_qss_s(name: str, **kargs):
+def load_qss_s(name: str, theme: Optional[str] = None, **kargs):
     from ui.main import LOG
 
-    qss_path = path.join(get_res_path('stylesheets'), name + '.qss')
+    if theme is None:
+        if SETTINGS:
+            theme = SETTINGS.get('theme')
+        else:
+            theme = ''
+
+    if theme:
+        theme = f'theme/{theme}'
+
+    qss_path = path.join(get_res_path('stylesheets'), theme, name + '.qss')
     qfile = QFile(qss_path)
 
     if not qfile.open(QIODevice.ReadOnly | QIODevice.Text):  # type: ignore
@@ -109,3 +124,11 @@ def load_qss_s(name: str, **kargs):
         qss = qss.replace(f'/*${{{k}}}$*/', str(v))
 
     return qss
+
+
+def _set_settings(settings: SettingsLoadedEvent):
+    global SETTINGS
+    SETTINGS = settings.get_value()
+
+
+register_event_handler(SettingsLoadedEvent, _set_settings)
