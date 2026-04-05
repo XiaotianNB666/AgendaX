@@ -23,6 +23,7 @@ from ui.utils.RemoteServer import RemoteServer
 LOG = getLogger(f'{APP.name}-ui')
 UICRASH = CrashReport()
 
+
 @dataclass
 class Subject:
     id: str
@@ -30,6 +31,7 @@ class Subject:
     display_name: str
     color: str
     assignments_card: Optional[SubjectCard] = None
+
 
 class MainWindow(QMainWindow):
     subject_layout_widget: QWidget
@@ -87,7 +89,6 @@ class MainWindow(QMainWindow):
         v_layout.addLayout(h_layout)
         v_layout.addStretch()
         container.setLayout(v_layout)
-
 
     def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
         widget_under_mouse = QApplication.widgetAt(a0.globalPos())
@@ -148,114 +149,21 @@ class MainWindow(QMainWindow):
         if settings_obj:
             for _subject in settings_obj.get('subjects', []):
                 _subject: dict
-                self.subjects.append(Subject(
-                    _subject.get('id'), _subject.get('name'), _subject.get('display_name', _subject.get('name')), _subject.get('color', '#FFFFFF'))
-                )
+                subject = Subject(
+                    _subject.get('id'), _subject.get('name'), _subject.get('display_name', _subject.get('name')),
+                    _subject.get('color', '#FFFFFF'))
+                if not subject.assignments_card:
+                    subject.assignments_card = SubjectCard(subject.display_name, self.centralWidget(), subject_color=subject.color)
 
-        for subject in self.subjects:
-            if not subject.assignments_card:
-                subject.assignments_card = SubjectCard(subject.display_name)
-                self.subject_layout.addWidget(subject.assignments_card)
-            _assignments: list[Assignment] = self.server.get_assignment_by_id(subject.id)
+                    subject.assignments_card.modify_label_color(subject.color)
+                    self.subject_layout.addWidget(subject.assignments_card)
+                _assignments: list[Assignment] = self.server.get_assignment_by_id(subject.id)
 
-        # # 如果没有 subjects，至少显示一个默认占位
-        # if not subjects:
-        #     lbl = QLabel(t('ui.main_window.no_subjects') if 'ui' in globals() else "No subjects")
-        #     self.subject_layout.addWidget(lbl)
-        #     return
-        #
-        # # ensure cache dir for resources
-        # cache_dir = os.path.join(get_work_dir('.app'), 'cache')
-        # os.makedirs(cache_dir, exist_ok=True)
-        #
-        # # 2. 针对每个 subject，尝试获取 assignments
-        # for subj in subjects:
-        #     # 规范化 subject id（支持 settings 中 subject 为 dict 的情况）
-        #     subj_id = None
-        #     if isinstance(subj, dict):
-        #         subj_id = subj.get('id') or subj.get('name') or str(subj)
-        #     else:
-        #         subj_id = str(subj)
-        #     assignments = []
-        #     if self.server:
-        #         try:
-        #             # RemoteServer 优先使用 list_assignments
-        #             if hasattr(self.server, "list_assignments"):
-        #                 try:
-        #                     assignments = self.server.list_assignments(subj_id)
-        #                 except Exception:
-        #                     LOG.debug(f"Remote list_assignments failed for {subj}", exc_info=True)
-        #                     assignments = []
-        #             # 本地 server 可能有 database 接口
-        #             if not assignments and hasattr(self.server, "database"):
-        #                 try:
-        #                     assignments = self.server.database.get_by_subject(subj_id)
-        #                 except Exception:
-        #                     LOG.debug(f"Local database get_by_subject failed for {subj}", exc_info=True)
-        #                     assignments = []
-        #         except Exception:
-        #             LOG.exception(f"Error while fetching assignments for subject: {subj}")
-        #
-        #     # 若 assignment 存在，且类型为 file:*，尝试请求资源并缓存为本地文件
-        #     if assignments:
-        #         for a in assignments:
-        #             try:
-        #                 # 确保 assignment.subject 有值（服务器可能未返回），回填为 subj_id
-        #                 try:
-        #                     if not getattr(a, "subject", None):
-        #                         a.subject = subj_id
-        #                 except Exception:
-        #                     pass
-        #
-        #                 # 如果是文件资源，尝试从服务器请求真实 bytes 并写入缓存文件
-        #                 try:
-        #                     dtype = getattr(a, "data_type", "") or ""
-        #                     data_ref = getattr(a, "data", "") or ""
-        #                     if dtype.startswith("file:") and data_ref and hasattr(self.server, "request_resource_sync"):
-        #                         try:
-        #                             content = self.server.request_resource_sync(dtype, data_ref, timeout=5.0)
-        #                             if content:
-        #                                 # 尝试识别图片扩展名（使用 detect_image_ext 替代 imghdr）
-        #                                 ext = detect_image_ext(content) or "bin"
-        #                                 fname = f"{uuid.uuid4().hex}.{ext}"
-        #                                 fpath = os.path.join(cache_dir, fname)
-        #                                 try:
-        #                                     with open(fpath, "wb") as f:
-        #                                         f.write(content)
-        #                                     # 将 assignment.data 指向本地缓存路径，供 SubjectCard 使用
-        #                                     a.data = fpath
-        #                                 except Exception:
-        #                                     LOG.debug("Failed to save resource to cache", exc_info=True)
-        #                         except Exception:
-        #                             LOG.debug("request_resource_sync failed", exc_info=True)
-        #                 except Exception:
-        #                     LOG.debug("Resource handling error", exc_info=True)
-        #
-        #                 # 使用统一的创建逻辑，确保回退可显示
-        #                 card = create_subject_card(a, subj_id)
-        #             except TypeError:
-        #                 try:
-        #                     card = create_subject_card(getattr(a, "subject", subj_id) or subj_id, subj_id)
-        #                 except Exception:
-        #                     card = QLabel(str(a.subject))
-        #             except Exception:
-        #                 LOG.debug("Failed to create SubjectCard from assignment", exc_info=True)
-        #                 card = QLabel(str(subj))
-        #             self.subject_layout.addWidget(card)
-        #     else:
-        #         # 没有 assignment 时也显示 subject（保证界面不空）
-        #         try:
-        #             # 以 subject id 作为参数构造 SubjectCard（兼容 settings 中 dict）
-        #             card = create_subject_card(subj, subj_id)
-        #         except Exception:
-        #             # 回退为简单 QLabel
-        #             card = QLabel(str(subj))
-        #         self.subject_layout.addWidget(card)
+
 
 def detect_image_ext(content: bytes) -> str | None:
     """
-    返回常见图片扩展名（不含点），若无法识别返回 None。
-    支持: jpg, png, gif, bmp, webp
+    返回常见图片扩展名
     """
     if not content or len(content) < 4:
         return None
@@ -278,9 +186,6 @@ def detect_image_ext(content: bytes) -> str | None:
 
 
 def main() -> int:
-    """
-    在 main() 内创建 QApplication 和 MainWindow，确保在 UI 主线程创建 Qt 对象。
-    """
     app = QApplication(sys.argv)
     main_window = MainWindow()
     register_stop(run_on_ui_thread(main_window.force_stop))
@@ -290,11 +195,6 @@ def main() -> int:
 
 
 def run_on_ui_thread(func):
-    """
-    装饰器：确保被装饰的函数在 UI 线程执行。
-    如果当前线程是 UI 线程，直接调用；否则通过 QTimer.singleShot 切换到 UI 线程。
-    """
-
     def wrapper(*args, **kwargs):
         app = QApplication.instance()
         if app is None:

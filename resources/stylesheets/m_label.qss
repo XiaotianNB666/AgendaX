@@ -5,5 +5,4 @@
 MLabel {
     color: #000000;
     font-size: 12px;
-    padding-left: 12px;
 }

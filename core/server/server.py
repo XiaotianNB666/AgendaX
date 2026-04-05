@@ -13,7 +13,7 @@ from sqlmodel import create_engine, Session, select, SQLModel
 from core.db.models import AssignmentTable, AssignmentRecord, ExerciseSubjectTable
 from core.events import register_event_handler, ExitEvent, fire_event, Event
 from core.server.packets import Packet, ShutdownPacket, HelloPacket, HeadPacket, get_packet, AssignmentPacket, \
-    AssignmentDelPacket
+    AssignmentDelPacket, ResourceResponsePacket, ResourceRequestPacket, MessagePacket
 from core.settings import Settings
 from core.utils.path_utils import get_work_dir
 
@@ -161,6 +161,18 @@ class ServerState(Enum):
     STOPPING = auto()
     STOPPED = auto()
 
+
+def _get_data(identity: str) -> bytes:
+    _data_path = os.path.join(get_work_dir('.app'), '_objects')
+    os.makedirs(_data_path, exist_ok=True)
+    try:
+        with open(os.path.join(_data_path, identity), 'rb') as f:
+            return f.read()
+    except (FileNotFoundError, IOError):
+        return b""
+
+def _strict_isinstance(obj, cls):
+    return type(obj) is cls
 
 class AgendaXServer:
     _port = 2000
@@ -324,7 +336,25 @@ class AgendaXServer:
                     self.update_assignment(assignment)
                 elif isinstance(packet, AssignmentDelPacket):
                     subject_id = packet.get_value()
-                    self.del_assignment_by_subject(subject_id)
+                    self.del_assignment_by_id(subject_id)
+                elif isinstance(packet, ResourceResponsePacket):
+                    data = packet.get_value()
+                    file_name = data.__hash__()
+                    _data_path = os.path.join(get_work_dir('.app'), '_objects')
+                    os.makedirs(_data_path, exist_ok=True)
+
+                    try:
+                        with open(os.path.join(_data_path, str(file_name)), 'wb') as f:
+                            f.write(data)
+                    except Exception as e:
+                        self.LOG.error(f"Failed to save resource from {addr}: {e}", exc_info=True)
+                elif isinstance(packet, ResourceRequestPacket):
+                    identity = packet.get_value()
+                    file = _get_data(identity)
+                    self.send_packet(client_socket, ResourceResponsePacket.create(file))
+                elif _strict_isinstance(packet, MessagePacket):
+                    self.LOG.info(f"Message from {addr}: {packet.get_value()}")
+
         except RuntimeError:
             pass
         finally:
@@ -351,7 +381,6 @@ class AgendaXServer:
             client.send(HeadPacket.create(packet).to_bytes())
             client.send(packet.to_bytes())
         except Exception as e:
-            # 安全获取 peer 信息，避免在非套接字或已关闭套接字上调用 getpeername 导致 OSError
             try:
                 peer = client.getpeername()
             except Exception:
@@ -359,7 +388,6 @@ class AgendaXServer:
             self.LOG.error(f"Failed to send packet to {peer}: {e}", exc_info=True)
 
     def wait_for_next_packet(self, _socket: socket) -> Optional[Packet]:
-        # 先做基本有效性检查（_socket 可能在子类中为 None 或被关闭）
         if _socket is None:
             return None
         if not hasattr(_socket, "recv") or not callable(getattr(_socket, "recv")):
@@ -367,7 +395,6 @@ class AgendaXServer:
 
         try:
             head_data = _socket.recv(HeadPacket.length())
-            # socket.recv 返回空 bytes 表示对端已关闭连接
             if not head_data:
                 raise RuntimeError("Connection closed by peer")
 
@@ -380,7 +407,6 @@ class AgendaXServer:
                 self.LOG.error(f"Expected HeadPacket but got {type(packet).__name__}")
                 return None
 
-            # 保证读取到完整 body（简单实现：循环读取直到长度满足或连接断开）
             body_chunks = []
             remaining = _body_length
             while remaining > 0:
@@ -396,7 +422,6 @@ class AgendaXServer:
             self.LOG.warning(f"Connection reset/closed: {e}")
             raise RuntimeError(f"Connection reset/closed: {e}")
         except Exception as e:
-            # 避免在此处直接调用 _socket.getpeername()，可能导致 WinError 10038
             try:
                 peer = _socket.getpeername()
             except Exception:

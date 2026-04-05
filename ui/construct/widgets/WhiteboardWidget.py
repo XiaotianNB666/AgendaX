@@ -1,26 +1,23 @@
 from typing import Callable
 
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QFrame)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame)
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QPainter, QPen, QColor, QPaintEvent, QMouseEvent
+from PyQt5.QtGui import QPainter, QPen, QColor, QPaintEvent, QMouseEvent, QImage
 
 from ui.construct.bases.abstract_widget import MPushButton, ModernWidgetLight
 from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
-from ui.utils.qss_loader import load_qss_s
 from core.i18n import t
 
 
 class WhiteboardWidget(QWidget):
-    """白板控件，支持手写输入和绘图"""
-
-    def __init__(self, parent: InlineDialogWidget):
+    def __init__(self, parent: InlineDialogWidget, pen_color='#000000'):
         super().__init__(parent)
         self._parent = parent
         self._init_ui()
         self._current_path = []
         self._paths = []
-        self._pen_color = QColor(0, 0, 0)
+        self.__pen_color = pen_color
+        self._pen_color = QColor(self.__pen_color)
         self._pen_width = 3
         self._drawing = False
         self._last_point = QPoint()
@@ -154,7 +151,7 @@ class WhiteboardWidget(QWidget):
     def _on_pen_clicked(self):
         self._pen_btn.setChecked(True)
         self._eraser_btn.setChecked(False)
-        self._pen_color = QColor(0, 0, 0)
+        self._pen_color = QColor(self.__pen_color)
         self._pen_width = 3
 
     def _on_eraser_clicked(self):
@@ -172,6 +169,7 @@ class WhiteboardWidget(QWidget):
         if self.confirm_handler:
             self.confirm_handler(self._parent)
         self._parent.hide_dialog()
+        self.clear()
 
     def _on_cancel(self):
         if self._temp_image:
@@ -179,11 +177,16 @@ class WhiteboardWidget(QWidget):
             self._temp_image = None
         self._drawing_area.update()
         self._parent.hide_dialog()
+        self.clear()
 
     def clear(self):
         self._paths.clear()
         self._current_path.clear()
         self._drawing_area.update()
+
+    def image(self) -> QImage:
+        pixmap = self._drawing_area.grab()
+        return pixmap.toImage()
 
     def save_to_image(self, file_path: str):
         pixmap = self._drawing_area.grab()

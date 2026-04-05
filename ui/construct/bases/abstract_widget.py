@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import override
 
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit
 
 from ui.construct.bases.core_widgets import QSSWidget, LayoutWidget
 from ui.utils.qss_loader import load_qss
@@ -16,14 +17,6 @@ class ModernWidgetLight(QSSWidget, metaclass=AbstractWidgetMeta):
         super().__init__(parent)
         if auto_load:
             self.setStyleSheet(load_qss(self))
-
-    def set_stylesheet(self, stylesheet: str):
-        super().setStyleSheet(stylesheet)
-
-    @override
-    def setStyleSheet(self, styleSheet: str):
-        original_stylesheet = '' if self.styleSheet() is None else self.styleSheet()
-        self.set_stylesheet(f'{original_stylesheet}\n{styleSheet}')
 
     def get_size(self):
         return self.size().width(), self.size().height()
@@ -46,7 +39,24 @@ class MPushButton(QPushButton, QSSWidget):
         super().__init__(parent)
         self.load()
 
+
 class MLabel(QLabel, QSSWidget):
+    clicked = QtCore.pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.load()
+
+    def mouseReleaseEvent(self, ev):
+        self.clicked.emit()
+
+
+class MComboBox(QLabel, QSSWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.load()
+
+class MLineEdit(QLineEdit, QSSWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.load()

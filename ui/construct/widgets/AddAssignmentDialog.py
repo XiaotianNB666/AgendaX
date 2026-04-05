@@ -1,10 +1,13 @@
-from PyQt5.QtWidgets import QLineEdit
+from typing import override
+
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
 from core.i18n import t
+from ui.construct.bases.abstract_widget import MLineEdit
 from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
 from ui.construct.widgets.WhiteboardWidget import WhiteboardWidget
+from ui.utils.qss_loader import load_qss_s
 
 
 class AddAssignmentWidget(WhiteboardWidget):
@@ -15,8 +18,9 @@ class AddAssignmentWidget(WhiteboardWidget):
     - 下方：手写白板区域
     """
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, parent=None, theme=None, pen_color='#000000'):
+        self.theme = theme
+        super().__init__(parent, pen_color)
         self._init_text_input()
 
     def _init_text_input(self):
@@ -24,54 +28,49 @@ class AddAssignmentWidget(WhiteboardWidget):
         在原有 WhiteboardWidget 工具栏中插入文本输入框
         """
         # ===== 创建文本输入框 =====
-        self._text_input = QLineEdit(self)
-        self._text_input.setPlaceholderText("请输入作业内容...")
-        self._text_input.setFixedHeight(34)
+        self.text_input = MLineEdit(self)
+        self.text_input.setPlaceholderText("请输入作业内容...")
+        self.text_input.setFixedHeight(34)
 
         # 设置字体：微软雅黑
         font = QFont("Microsoft YaHei", 12)
-        self._text_input.setFont(font)
+        self.text_input.setFont(font)
+        self.text_input.setStyleSheet(load_qss_s('line_edit_', self.theme))
 
-        # 确保启用输入法（Windows 虚拟键盘必须）
-        self._text_input.setAttribute(Qt.WA_InputMethodEnabled, True)
+        self.text_input.setAttribute(Qt.WA_InputMethodEnabled, True)
 
-        # ===== 找到工具栏 layout =====
-        # WhiteboardWidget 的主布局是 QVBoxLayout
         main_layout = self.layout()
         if main_layout is None:
             return
 
-        # 第一个元素是 toolbar (QHBoxLayout)
         toolbar = main_layout.itemAt(0).layout()
         if toolbar is None:
             return
-
-        # 在工具栏上方插入文本输入框
-        main_layout.insertWidget(0, self._text_input)
-
+        main_layout.insertWidget(0, self.text_input)
 
     def get_text(self) -> str:
         """获取用户输入的文本"""
-        return self._text_input.text().strip()
+        return self.text_input.text().strip()
 
     def set_text(self, text: str):
         """设置文本内容"""
-        self._text_input.setText(text)
+        self.text_input.setText(text)
 
-    def clear_all(self):
-        """清空文本和白板"""
-        self._text_input.clear()
-        self.clear()
+    @override
+    def clear(self):
+        self.text_input.clear()
+        super().clear()
 
 
 class AddAssignmentDialog(InlineDialogWidget):
 
-    def __init__(self, parent=None, title=t('ui.assignment.title')):
+    def __init__(self, parent=None, title=t('ui.assignment.title'), theme=None, subject_color: str = '#000000'):
         super().__init__(parent, title, draggable=True, show_title_bar=True)
 
         self.setMinimumSize(400, 300)
         self.resize(500, 350)
-
-        self.assignment_widget = AddAssignmentWidget(self)
+        self.theme = theme
+        self.assignment_widget = AddAssignmentWidget(self, theme=self.theme, pen_color=subject_color)
+        self.assignment_widget.text_input.setStyleSheet('QLineEdit {'f'color:{subject_color};''}')
 
         self.set_content(self.assignment_widget)

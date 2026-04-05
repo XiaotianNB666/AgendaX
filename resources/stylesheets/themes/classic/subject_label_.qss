@@ -1,6 +1,6 @@
-* {
+MLabel {
     background-color: #F2D5D9;
-    font-size: 30px;
+    font-size: 50px;
 }
 
 QLabel#subjectLabel {

@@ -1,3 +1,5 @@
+from typing import override
+
 from ui.utils.qss_loader import load_qss
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                              QLayout)
@@ -6,6 +8,14 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
 class QSSWidget(QWidget):
     def load(self):
         self.setStyleSheet(load_qss(self.__class__))
+
+    def set_stylesheet(self, stylesheet: str):
+        super().setStyleSheet(stylesheet)
+
+    @override
+    def setStyleSheet(self, styleSheet: str):
+        original_stylesheet = '' if self.styleSheet() is None else self.styleSheet()
+        self.set_stylesheet(f'{original_stylesheet}\n{styleSheet}')
 
 
 class LayoutWidget(QWidget):

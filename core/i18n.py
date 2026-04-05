@@ -52,7 +52,6 @@ def set_locale(locale: str):
         locale: 语言代码，如 'zh-CN', 'en', 'ja'
     """
     i18n.set('locale', locale)
-    print(f"[i18n] 语言已切换为: {locale}")
 
 
 def get_locale() -> str:
