@@ -32,9 +32,15 @@
             "title": "白板"
         },
         "assignment": {
-                "title": "添加作业",
-                "edit_title": "编辑作业",
-                "submit": "完成"
+            "title": "添加作业",
+            "edit_title": "编辑作业",
+            "delete_confirm_title": "删除此作业",
+            "submit": "完成",
+            "delete_confirm_message": "是否删除此作业？"
+        },
+        "common": {
+            "confirm": "是",
+            "cancel": "否"
         }
     },
     "time": {

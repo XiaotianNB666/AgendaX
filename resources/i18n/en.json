@@ -29,9 +29,15 @@
             "title": "whiteboard"
         },
         "assignment": {
-                "title": "Add Assignment",
-                "edit_title": "Edit Assignment",
-                "submit": "OK"
+            "title": "Add Assignment",
+            "edit_title": "Edit Assignment",
+            "delete_confirm_title": "Delete this assignment",
+            "submit": "OK",
+            "delete_confirm_message": "Do you want to delete this assignment?"
+        },
+        "common": {
+            "confirm": "yes",
+            "cancel": "cancel"
         }
     },
     "time": {
