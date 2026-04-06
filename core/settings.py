@@ -42,8 +42,51 @@ class Settings:
         from core.app import version
         self._settings = {
             'version': version(),
-            'subjects': [],
-            'theme': 'classic'
+            'subjects': [
+                {
+                    "id": "chinese",
+                    "name": "语文",
+                    "display_name": "语",
+                    "color": "#C00000"
+                },
+                {
+                    "id": "math",
+                    "name": "数学",
+                    "display_name": "数",
+                    "color": "#008BFE"
+                },
+                {
+                    "id": "english",
+                    "name": "英语",
+                    "display_name": "英",
+                    "color": "#EAB200"
+                },
+                {
+                    "id": "physics",
+                    "name": "物理",
+                    "display_name": "物",
+                    "color": "#227BDC"
+                },
+                {
+                    "id": "chemistry",
+                    "name": "化学",
+                    "display_name": "化",
+                    "color": "#802282"
+                },
+                {
+                    "id": "biology",
+                    "name": "生物",
+                    "display_name": "生",
+                    "color": "#71C107"
+                }
+            ],
+            'theme': 'classic',
+            'lang': 'zh-CN',
+            'time_mapping': {
+                '晚一': '19:25',
+                '晚二': '20:20',
+                '晚三': '21:45'
+            }
         }
         return self._settings
 

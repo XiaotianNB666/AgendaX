@@ -8,7 +8,7 @@ from socket import socket, AF_INET, SOCK_STREAM
 from typing import Callable, Sequence, Optional
 
 from sqlalchemy import delete
-from sqlmodel import create_engine, Session, select, SQLModel
+from sqlmodel import create_engine, Session, select, SQLModel, Field
 
 from core.db.models import AssignmentTable, AssignmentRecord, ExerciseSubjectTable
 from core.events import register_event_handler, ExitEvent, fire_event, Event
@@ -35,7 +35,12 @@ class Assignment:
     start_time: float = field(default_factory=time.time)
     finish_time: float | None = None
     finish_time_type: str = ""
-    id: int | None = None
+    id: Optional[int] = None
+
+    @classmethod
+    def create(cls, subject_id: str, data_type: str, data: str, start_time: float, finish_time: float,
+               finish_time_type: str):
+        return cls(subject_id, data_type, data, start_time, finish_time, finish_time_type)
 
 
 # =========================
@@ -162,7 +167,7 @@ class ServerState(Enum):
     STOPPED = auto()
 
 
-def _get_data(identity: str) -> bytes:
+def get_res_data(identity: str) -> bytes:
     _data_path = os.path.join(get_work_dir('.app'), '_objects')
     os.makedirs(_data_path, exist_ok=True)
     try:
@@ -171,8 +176,10 @@ def _get_data(identity: str) -> bytes:
     except (FileNotFoundError, IOError):
         return b""
 
+
 def _strict_isinstance(obj, cls):
     return type(obj) is cls
+
 
 class AgendaXServer:
     _port = 2000
@@ -185,20 +192,16 @@ class AgendaXServer:
             self.database = DatabaseHelper()
         self.settings = Settings()
 
-        # 当 create_socket 为 True 时创建监听 socket，否则留空以便子类（如 RemoteServer）使用不同的行为
         self._socket = None
         if create_socket:
             self._socket = socket(AF_INET, SOCK_STREAM)
-        # clients 列表在本类逻辑中可能被使用，始终保持存在
         self._clients: list[socket] = []
 
-        # 线程池无论如何都初始化（RemoteServer 仍可以使用 run_later 调度任务）
         self._executor = ThreadPoolExecutor(
             max_workers=self.settings.get("max_workers", 10),
             thread_name_prefix="AgendaXWorker"
         )
 
-        # 仅在创建本地 socket 时注册 OS 信号处理（RemoteServer 作为客户端不需要）
         if create_socket:
             signal.signal(signal.SIGINT, self._signal_handler)
             signal.signal(signal.SIGTERM, self._signal_handler)
@@ -340,17 +343,10 @@ class AgendaXServer:
                 elif isinstance(packet, ResourceResponsePacket):
                     data = packet.get_value()
                     file_name = data.__hash__()
-                    _data_path = os.path.join(get_work_dir('.app'), '_objects')
-                    os.makedirs(_data_path, exist_ok=True)
-
-                    try:
-                        with open(os.path.join(_data_path, str(file_name)), 'wb') as f:
-                            f.write(data)
-                    except Exception as e:
-                        self.LOG.error(f"Failed to save resource from {addr}: {e}", exc_info=True)
+                    self.save_resource(str(file_name), data)
                 elif isinstance(packet, ResourceRequestPacket):
                     identity = packet.get_value()
-                    file = _get_data(identity)
+                    file = get_res_data(identity)
                     self.send_packet(client_socket, ResourceResponsePacket.create(file))
                 elif _strict_isinstance(packet, MessagePacket):
                     self.LOG.info(f"Message from {addr}: {packet.get_value()}")
@@ -366,6 +362,16 @@ class AgendaXServer:
                 self._clients.remove(client_socket)
             self.LOG.info(f"Client disconnected: {addr}")
 
+    def save_resource(self, file_name, data: bytes):
+        _data_path = os.path.join(get_work_dir('.app'), '_objects')
+        os.makedirs(_data_path, exist_ok=True)
+
+        try:
+            with open(os.path.join(_data_path, str(file_name)), 'wb') as f:
+                f.write(data)
+        except Exception as e:
+            self.LOG.error(f"Failed to save resource: {e}", exc_info=True)
+
     def __str__(self):
         return f"<LocalServer:{self._port}>"
 
@@ -376,7 +382,10 @@ class AgendaXServer:
             except Exception:
                 pass
 
-    def send_packet(self, client: socket, packet: Packet):
+    def send_packet(self, client: Optional[socket], packet: Packet):
+        if not client:
+            self.LOG.warning("Attempted to send packet to None client")
+            return
         try:
             client.send(HeadPacket.create(packet).to_bytes())
             client.send(packet.to_bytes())
@@ -441,7 +450,8 @@ class AgendaXServer:
     def update_assignment(self, assignment: Assignment):
         with Session(self.database.engine) as session:
             if assignment.id is None:
-                raise ValueError("Assignment must have an id for update")
+                self.database.add(assignment)
+                return
 
             stmt = (
                 select(AssignmentTable)
@@ -450,7 +460,6 @@ class AgendaXServer:
             existing = session.exec(stmt).one_or_none()
 
             if not existing:
-                # 添加新纪录
                 self.database.add(assignment)
                 return
 
@@ -463,3 +472,7 @@ class AgendaXServer:
 
             session.add(existing)
             session.commit()
+
+    @property
+    def is_local(self) -> bool:
+        return True

@@ -2,10 +2,11 @@ from abc import ABC, abstractmethod
 from typing import override
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit
+from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox
 
 from ui.construct.bases.core_widgets import QSSWidget, LayoutWidget
-from ui.utils.qss_loader import load_qss
+from ui.utils.qss_loader import load_qss, load_qss_s
 
 
 class AbstractWidgetMeta(type(ABC), type(QWidget)):
@@ -50,11 +51,19 @@ class MLabel(QLabel, QSSWidget):
     def mouseReleaseEvent(self, ev):
         self.clicked.emit()
 
+    def set_color(self, color: str):
+        self.setStyleSheet(
+            'MLabel {'
+            f'color: {color}'
+            '}'
+        )
 
-class MComboBox(QLabel, QSSWidget):
-    def __init__(self, parent=None):
+
+class MComboBox(QComboBox, QSSWidget):
+    def __init__(self, parent=None, theme=None):
         super().__init__(parent)
         self.load()
+        self.setStyleSheet(load_qss_s('combo_box', theme))
 
 class MLineEdit(QLineEdit, QSSWidget):
     def __init__(self, parent=None):

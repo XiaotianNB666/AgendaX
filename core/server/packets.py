@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import json
+from typing import Optional
 
 from core.utils.dict_utils import get_key_from_value
 
@@ -225,7 +226,6 @@ class ResourceRequestPacket(JSONPacket):
         return super().create(payload)
 
     def get_value(self):
-        # 返回一个 dict: {"resource_type": ..., "identifier": ...}
         return super().get_value()
 
 
@@ -238,14 +238,20 @@ class ResourceResponsePacket(Packet):
         return "resource_response"
 
     @classmethod
-    def create(cls, data: bytes) -> Packet:
-        """
-        data: 资源数据（例如文件内容的二进制）
-        """
-        return cls(cls.type(), data)
+    def create(cls, identifier: str, data: bytes) -> Packet:
+        return cls(cls.type(), identifier.encode('utf-8') + b'\x00\x00' + data)
 
-    def get_value(self):
-        return self.data
+    def get_value(self) -> tuple[Optional[str], bytes]:
+        """
+        返回 (identifier, data)，如果没有 identifier 则返回 (None, data)
+        """
+        # 若有第一个\x00\x00，则认为前面是 identifier，后面是数据；否则全部当作数据
+        if b'\x00\x00' in self.data:
+            identifier_bytes, data = self.data.split(b'\x00\x00', 1)
+            identifier = identifier_bytes.decode('utf-8')
+            return identifier, data
+        else:
+            return None, self.data
 
 
 class HeadPacket(Packet):

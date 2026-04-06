@@ -1,13 +1,23 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout
-from PyQt5.QtCore import Qt, QTimer, QDateTime
-from PyQt5.QtGui import QPainter, QColor, QLinearGradient
+from typing import Optional
 
-from core.server.server import Assignment
+from PyQt5.QtWidgets import QWidget, QSizePolicy
+from PyQt5.QtCore import Qt, QTimer, QDateTime, QBuffer
+from PyQt5.QtGui import QPainter, QColor, QLinearGradient, QImage, QPixmap
+
+from core.app import get_server
+from core.i18n import t
+from core.server.packets import ResourceResponsePacket, AssignmentDelPacket
+from core.server.server import Assignment, AgendaXServer
+from core.settings import Settings
+from ui.construct.bases.abstract_widget import MLabel
 from ui.construct.bases.card import Card
+from ui.construct.widgets.AddAssignmentDialog import AddAssignmentDialog
+from ui.utils.RemoteServer import RemoteServer
+from ui.utils.qss_loader import load_qss_s
+from core.utils import time_utils
 
 
 class CustomProgressBar(QWidget):
-    """自定义绘制进度条（无 QProgressBar）"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -45,22 +55,43 @@ class CustomProgressBar(QWidget):
         painter.drawRoundedRect(progress_rect, 4, 4)
 
 
+class ImageLabel(MLabel):
+    def __init__(self, img: QImage):
+        self.img = img
+        super().__init__()
+        self.setPixmap(QPixmap.fromImage(img))
+        self.setScaledContents(True)
+
+
 class AssignmentCard(Card):
     def __init__(
             self,
             assignment: Assignment,
-            auto_load=True
+            auto_load=True,
+            server: Optional[AgendaXServer] = None,
+            theme=None,
+            _settings=None,
+            _dialog_parent=None
     ):
+        self._time_label = None
         self._progress_value = 0
         self._custom_progress = None
         self._assignment = assignment
         self._content_widget = None
+        self._server = server
+        self._settings: Settings = _settings
+        self._img: Optional[ImageLabel] = None
 
         self._start_time = assignment.start_time
         self._deadline_timestamp = assignment.finish_time
         self._total_time_seconds = 0.0
+        self._dialog_parent = _dialog_parent
+
+        self._assignment: Assignment = assignment
+        self._edit_dialog: Optional[AddAssignmentDialog] = None
 
         super().__init__()
+        self._time_label.setStyleSheet(load_qss_s('label_', theme))
         self._timer = QTimer(self)
 
         if auto_load:
@@ -69,17 +100,35 @@ class AssignmentCard(Card):
         self.init_size()
         self.start_timer()
 
-    def init_card(self):
-        main_layout = self.layout()
-        if main_layout is None:
-            main_layout = QVBoxLayout(self)
+    def parse_assignment(self):
+        day = time_utils.get_day_name(
+            time_utils.get_initial_time_of_this_day(self._assignment.finish_time)
+        )
+        text = f'{day} {self._assignment.finish_time_type}'
+        self._time_label.setText(text)
 
-        self._content_widget = QWidget()
-        content_layout = QVBoxLayout(self._content_widget)
-        content_layout.setContentsMargins(0, 0, 0, 0)
+        self._start_time = self._assignment.start_time
+        self._deadline_timestamp = self._assignment.finish_time
+
+
+    def init_card(self):
+        self._time_label = MLabel()
+        self.parse_assignment()
+        self._time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self._time_label.setSizePolicy(
+            QSizePolicy.Preferred,
+            QSizePolicy.Preferred
+        )
+
+        self._time_label.clicked.connect(self._edit_assignment)
+
+        self.set_right(self._time_label)
+
         self._custom_progress = CustomProgressBar(self)
-        main_layout.addWidget(self._content_widget)
-        main_layout.addWidget(self._custom_progress)
+        self._custom_progress.setFixedHeight(5)
+        self.set_bottom(self._custom_progress)
+
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
     def init_size(self, obj=None):
         if obj is not None:
@@ -88,7 +137,31 @@ class AssignmentCard(Card):
             self.resize(300, 80)
 
     def set(self, child: QWidget):
-        self._content_widget.layout().addWidget(child)
+        self.set_center(child)
+        if isinstance(child, ImageLabel):
+            self._img = child
+
+    def _edit_assignment(self):
+        from ui.construct.widgets.AddAssignmentDialog import AddAssignmentDialog
+
+        self._edit_dialog = AddAssignmentDialog(
+            parent=self._dialog_parent,
+            theme=None,
+            subject_color="#FFFFFF"
+        )
+
+        self._edit_dialog.set_title(t('ui.assignment.edit_title'))
+
+        if self._assignment.data_type == "text":
+            self._edit_dialog.assignment_widget.set_text(self._assignment.data)
+        elif self._assignment.data_type.startswith("file:"):
+            self._edit_dialog.assignment_widget.set_image(self._img.img)
+
+        self._edit_dialog.assignment_widget.register_confirm_handler(
+            self._on_edit_confirmed
+        )
+
+        self._edit_dialog.show_dialog()
 
     def set_deadline(self, deadline_timestamp: float):
         self._deadline_timestamp = deadline_timestamp
@@ -142,3 +215,51 @@ class AssignmentCard(Card):
 
     def stop_timer(self):
         self._timer.stop()
+
+    def _on_edit_confirmed(self, _parent: AddAssignmentDialog):
+        new_text = self._edit_dialog.assignment_widget.get_text()
+        new_img = self._edit_dialog.assignment_widget.image()
+
+        if new_text:
+            self._assignment.data = new_text
+            self._assignment.data_type = "text"
+        else:
+            buf = QBuffer()
+            new_img.save(buf, "PNG")
+            _data = buf.data()
+            hashed = _data.__hash__()
+            self._assignment.data = str(hashed)
+            self._assignment.data_type = "file:img"
+            buf.close()
+
+            if sv := get_server():
+                if sv.is_local:
+                    sv.save_resource(str(hashed), _data)
+                else:
+                    server: RemoteServer = sv
+                    server.send_packet(None,
+                                       ResourceResponsePacket.create(str(hashed), _data)
+                                       )
+
+        new_time, time_type = self._edit_dialog.assignment_widget.get_finish_time()
+        self._assignment.finish_time = float(new_time)
+        self._assignment.finish_time_type = time_type
+
+        self.parse_assignment()
+
+        if sv := get_server():
+            try:
+                sv.update_assignment(self._assignment)
+            except:
+                import traceback
+                traceback.print_exc()
+
+        self._edit_dialog.hide_dialog()
+
+    def del_this_assignment(self):
+        if sv:=get_server():
+            if sv.is_local:
+                sv.del_assignment_by_id(self._assignment.id)
+            else:
+                server: RemoteServer = sv
+                server.send_packet(None, AssignmentDelPacket.create(self._assignment.id))

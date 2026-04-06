@@ -3,21 +3,26 @@ import sys
 from dataclasses import dataclass
 from typing import Optional
 
-from PyQt5.QtCore import QTimer, QThread
-from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout
+from PyQt5.QtCore import QTimer, QThread, Qt, QByteArray
+from PyQt5.QtGui import QMouseEvent, QImage
+from PyQt5.QtWidgets import (
+    QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout, QSizePolicy, QLabel
+)
 
 from core.app import APP, register_stop, get_server, set_server, get_property
 from core.crash_report import CrashReport
 from core.events import register_event_handler, ExitEvent
 from core.i18n import t
-from core.server.server import AgendaXServer, ServerStartedEvent, Assignment
+from core.server.packets import ResourceResponsePacket
+from core.server.server import AgendaXServer, ServerStartedEvent, Assignment, get_res_data
 from core.settings import Settings
 from core.utils.logger.logging import getLogger
 from core.utils.path_utils import get_res_path
 from platforms.windows.winui import enable_win_blur_background
+
 from ui.construct.floating_ball import AgendaXFloatingBall
 from ui.construct.subject_card import SubjectCard
+from ui.construct.widgets.AssignmentCard import AssignmentCard, ImageLabel
 from ui.utils.RemoteServer import RemoteServer
 
 LOG = getLogger(f'{APP.name}-ui')
@@ -38,23 +43,24 @@ class MainWindow(QMainWindow):
     subject_layout: QVBoxLayout
     floating_ball: AgendaXFloatingBall
     settings: Settings = None
-    server: AgendaXServer = None
-    subjects: list
+    server: AgendaXServer | RemoteServer = None
+    subjects: list[Subject]
 
     def __init__(self) -> None:
-        register_event_handler(
-            ServerStartedEvent, self._set_server
-        )
+        register_event_handler(ServerStartedEvent, self._set_server)
         super().__init__()
+
         self.floating_ball = AgendaXFloatingBall()
         self.floating_ball.set_click_action(self._handle_ball_clicked)
         self.floating_ball.setIcon(os.path.join(get_res_path('icon'), 'icon.png'))
         self.floating_ball.set_exit_action(self.stop)
+
         self.init_ui()
+
         if (server := get_server()) is not None:
             LOG.info(f'Connected to Server {server} successfully')
             self.server = server
-        # 在窗口初始化完成后加载 subjects（无论是否有 server）
+
         try:
             self.load_subjects()
         except Exception:
@@ -71,23 +77,43 @@ class MainWindow(QMainWindow):
     def init_ui(self) -> None:
         container = enable_win_blur_background(self)
         container.setMinimumSize(self.size())
+
         if container is None:
             LOG.error('cannot get central container.')
             UICRASH.reason = t('ui.main_window.error.init')
             LOG.critical(UICRASH.string)
+            return
+
+        # ===== Subject 区域 =====
         self.subject_layout_widget = QWidget()
         self.subject_layout = QVBoxLayout(self.subject_layout_widget)
+        self.subject_layout.setContentsMargins(0, 0, 0, 0)
+        self.subject_layout.setSpacing(6)
+        self.subject_layout.setAlignment(Qt.AlignTop)
 
+        # 设置布局拉伸策略
+        self.subject_layout.setStretch(0, 0)
+        self.subject_layout.addStretch(1)
+
+        # 设置容器大小策略
+        self.subject_layout_widget.setSizePolicy(
+            QSizePolicy.Expanding,
+            QSizePolicy.Expanding
+        )
+
+        # ===== 水平布局（居中显示）=====
         h_layout = QHBoxLayout()
-        h_layout.addSpacing(50)
+        h_layout.addSpacing(50)  # 左侧伸缩项
         h_layout.addWidget(self.subject_layout_widget)
-        h_layout.addSpacing(50)
-        v_layout = QVBoxLayout()
-        v_layout.addSpacing(10)
-        v_layout.addSpacing(10)
-        v_layout.addStretch()
+        h_layout.addSpacing(50)  # 右侧伸缩项
+
+        # ===== 垂直主布局（居中显示）=====
+        v_layout = QVBoxLayout(container)
+        v_layout.setContentsMargins(0, 0, 0, 0)
+        v_layout.addStretch(1)  # 上方伸缩项
         v_layout.addLayout(h_layout)
-        v_layout.addStretch()
+        v_layout.addStretch(1)  # 下方伸缩项
+
         container.setLayout(v_layout)
 
     def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
@@ -126,9 +152,8 @@ class MainWindow(QMainWindow):
             except Exception:
                 LOG.exception("Failed to load subjects after connecting remote")
 
-    # ========== 新增/修改方法 ==========
+    # ========== subject 管理 ==========
     def clear_subjects(self) -> None:
-        """清空 subject_layout 中已有的控件（并释放父控件引用）"""
         while self.subject_layout.count():
             item = self.subject_layout.takeAt(0)
             widget = item.widget()
@@ -137,49 +162,78 @@ class MainWindow(QMainWindow):
                 widget.deleteLater()
 
     def load_subjects(self) -> None:
-        """
-        从 settings 获取 subjects 列表；对每个 subject，尝试从 server 获取 assignments（兼容 RemoteServer 或 本地 server.database）。
-        无 assignment 时仍创建 SubjectCard 来显示 subject。
-        """
         self.clear_subjects()
 
         settings_obj = get_property('settings', _type=Settings)
-        self.subjects: list[Subject] = []
+        self.subjects = []
 
-        if settings_obj:
-            for _subject in settings_obj.get('subjects', []):
-                _subject: dict
-                subject = Subject(
-                    _subject.get('id'), _subject.get('name'), _subject.get('display_name', _subject.get('name')),
-                    _subject.get('color', '#FFFFFF'))
-                if not subject.assignments_card:
-                    subject.assignments_card = SubjectCard(subject.display_name, self.centralWidget(), subject_color=subject.color)
+        if not settings_obj:
+            return
 
-                    subject.assignments_card.modify_label_color(subject.color)
-                    self.subject_layout.addWidget(subject.assignments_card)
-                _assignments: list[Assignment] = self.server.get_assignment_by_id(subject.id)
+        for _subject in settings_obj.get('subjects', []):
+            subject = Subject(
+                _subject.get('id'),
+                _subject.get('name'),
+                _subject.get('display_name', _subject.get('name')),
+                _subject.get('color', '#FFFFFF')
+            )
 
+            subject.assignments_card = SubjectCard(
+                subject,
+                self.centralWidget()
+            )
+            subject.assignments_card.modify_label_color(subject.color)
+
+            self.subject_layout.addWidget(subject.assignments_card)
+
+            self.subjects.append(subject)
+
+            assignments: list[Assignment] = self.server.get_assignment_by_id(subject.id)
+            for ass in assignments:
+                if 'file' in ass.data_type:
+                    if self.server.is_local:
+                        _data = get_res_data(ass.data)
+                        self._handle_res(subject, ass, _data)
+                    else:
+                        sv: RemoteServer = self.server
+                        sv.request_resource(ass.data_type, ass.data, lambda data:
+                        run_on_ui_thread(lambda:
+                                         self._handle_res(subject, ass, data)
+                                         )
+                                            )
+
+        self.subject_layout.addStretch(1)
+
+    def _add_ass(self, subject: Subject, ass: Assignment, widget) -> None:
+        subject.assignments_card.add_assignment(
+            _ass_c := AssignmentCard(
+                ass,
+                server=self.server,
+                theme=self.settings.get('theme', 'classic') if self.settings else None,
+                _settings=self.settings,
+                _dialog_parent=self.centralWidget()
+            )
+        )
+        _ass_c.set(widget)
+
+    def _handle_res(self, subject: Subject, ass: Assignment, data) -> None:
+        img = QImage()
+        img.loadFromData(QByteArray(data))
+        label = ImageLabel(img)
+        self._add_ass(subject, ass, label)
 
 
 def detect_image_ext(content: bytes) -> str | None:
-    """
-    返回常见图片扩展名
-    """
     if not content or len(content) < 4:
         return None
-    # JPEG: FF D8 FF
     if content[:3] == b'\xff\xd8\xff':
         return 'jpg'
-    # PNG: 89 50 4E 47 0D 0A 1A 0A
     if content.startswith(b'\x89PNG\r\n\x1a\n'):
         return 'png'
-    # GIF: GIF87a / GIF89a
     if content.startswith(b'GIF87a') or content.startswith(b'GIF89a'):
         return 'gif'
-    # BMP: 'BM'
     if content.startswith(b'BM'):
         return 'bmp'
-    # WEBP: 'RIFF'....'WEBP'
     if content[:4] == b'RIFF' and content[8:12] == b'WEBP':
         return 'webp'
     return None

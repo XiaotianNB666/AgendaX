@@ -1,10 +1,12 @@
 import socket
 import threading
+import time
 import uuid
 import base64
 from typing import Optional, Callable, override, List
 
-from core.server.packets import HelloPacket, JSONPacket, ResourceRequestPacket
+from core.server.packets import HelloPacket, JSONPacket, ResourceRequestPacket, Packet, ResourceResponsePacket, \
+    CrashPacket
 from core.server.server import AgendaXServer, Assignment, ServerState
 from core.app import LOG, version
 
@@ -34,7 +36,6 @@ class RemoteServer(AgendaXServer):
             self.shutdown()
 
     def shutdown(self):
-        from core.app import app_quit
         if self._state != ServerState.RUNNING:
             return
 
@@ -101,66 +102,52 @@ class RemoteServer(AgendaXServer):
             self.LOG.warning("Not connected to remote server")
             return
         try:
-            # 包含一个 request_id 可以帮助服务器回传时关联（若服务器实现）
             payload = {"action": action, "data": data, "request_id": uuid.uuid4().hex}
             packet = JSONPacket.create(payload)
-            # 使用父类的 send_packet（已包含异常处理）
             self.send_packet(self.remote_socket, packet)
         except Exception as e:
             self.LOG.error(f"Failed to send request: {e}", exc_info=True)
 
-    def request_resource(self, resource_type: str, identifier: str):
+    def request_resource(self, resource_type: str, identifier: str, resource_response_handler: Optional[Callable] = None) -> bool:
         """通过 ResourceRequestPacket 请求资源（例如 data_type='file:img'）"""
         if not self.is_connected or not self.remote_socket:
             self.LOG.warning("Not connected to remote server")
-            return
+            return False
         try:
             packet = ResourceRequestPacket.create(resource_type, identifier)
             self.send_packet(self.remote_socket, packet)
+            self._response_handlers[identifier] = resource_response_handler
+            return True
         except Exception as e:
             self.LOG.error(f"Failed to request resource: {e}", exc_info=True)
-
-    def register_response_handler(self, action: str, handler: Callable):
-        """注册响应处理器"""
-        self._response_handlers[action] = handler
-
-    def unregister_response_handler(self, action: str, original_handler: Optional[Callable] = None):
-        """
-        安全移除响应处理器；如果提供 original_handler，则恢复之（用于临时覆盖场景）
-        """
-        if original_handler is None:
-            # 直接删除
-            self._response_handlers.pop(action, None)
-        else:
-            # 恢复原有
-            self._response_handlers[action] = original_handler
+            return False
 
     def _listen_remote(self):
-        """监听远程服务器响应"""
         while self._state == ServerState.RUNNING and self.is_connected and self.remote_socket:
             try:
                 packet = self.wait_for_next_packet(self.remote_socket)
                 if packet is None:
-                    # 可能是短暂错误或已关闭，继续循环检查状态
                     continue
                 elif isinstance(packet, HelloPacket):
                     if packet.get_value() != version():
                         LOG.warning(f"Remote server version mismatch: expected {version()}, got {packet.get_value()}")
                     else:
                         LOG.info(f"Remote server version: {packet.get_value()}")
-                else:
-                    # 其他包由注册的响应处理器或上层处理
+                elif isinstance(packet, ResourceResponsePacket):
                     try:
-                        # 若是 JSONPacket 且含 action，尝试派发到 handler
-                        if hasattr(packet, "get_value"):
-                            val = packet.get_value()
-                            if isinstance(val, dict) and "action" in val:
-                                action = val.get("action")
-                                handler = self._response_handlers.get(action)
-                                if handler:
-                                    handler(val.get("data"))
+                        identifier, data = packet.get_value()
+                        handler = self._response_handlers.get(identifier)
+                        if handler:
+                            handler(data)
                     except Exception:
-                        self.LOG.exception("Error handling remote packet")
+                        self.LOG.exception("Error handling resource response packet")
+                elif isinstance(packet, CrashPacket):
+                    try:
+                        crash_info = packet.get_value()
+                        from boot.main_boot import on_crash
+                        on_crash(crash_info)
+                    except Exception:
+                        self.LOG.exception("Error handling crash packet")
             except (ConnectionAbortedError, ConnectionResetError, RuntimeError) as e:
                 self.LOG.info(f"Remote connection closed: {e}")
                 break
@@ -193,7 +180,7 @@ class RemoteServer(AgendaXServer):
         """
         同步方式尝试从远程获取 assignment 列表。
         - 发送 action 'get_assignments'
-        - 等待可能的响应 action 名称：'assignments', 'get_assignments', 'get_assignments_response'
+        - 响应 action 名称：'resource_response'
         返回 Assignment 列表（超时或无响应返回空列表）
         """
         if not self.is_connected:
@@ -333,3 +320,14 @@ class RemoteServer(AgendaXServer):
     def __str__(self):
         return f"RemoteServer(remote_host={self.remote_host}, remote_port={self.remote_port}, is_connected={self.is_connected})"
 
+    @override
+    def send_packet(self, client: socket = None, packet: Packet = None):
+        if client is None:
+            client = self.remote_socket
+        if packet is None:
+            return
+        super().send_packet(client, packet)
+
+    @property
+    def is_connected(self) -> bool:
+        return False

@@ -33,7 +33,23 @@
         },
         "assignment": {
                 "title": "添加作业",
+                "edit_title": "编辑作业",
                 "submit": "完成"
         }
+    },
+    "time": {
+        "today": "今天",
+        "tomorrow": "明天",
+        "day_after_tomorrow": "后天",
+        "weekday": {
+            "1": "周一",
+            "2": "周二",
+            "3": "周三",
+            "4": "周四",
+            "5": "周五",
+            "6": "周六",
+            "7": "周天"
+        },
+        "next_weekday": "下%{weekday}"
     }
 }

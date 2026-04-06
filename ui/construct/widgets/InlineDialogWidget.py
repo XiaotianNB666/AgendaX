@@ -148,6 +148,8 @@ class InlineDialogWidget(QFrame):
                 item.widget().deleteLater()
         self._content_layout.addWidget(widget)
 
+        QTimer.singleShot(0, self.resize_to_content)
+
     def get_content_widget(self) -> QWidget:
         return self._content_widget
 
@@ -201,22 +203,27 @@ class InlineDialogWidget(QFrame):
     def show_dialog(self, with_animation: bool = True) -> None:
         if not self.parent():
             return
+
         self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
         self.setFocusPolicy(Qt.StrongFocus)
         self.show()
         self._is_shown = True
+
+        self.resize_to_content()
+
         parent_rect = self.parent().rect()
-        dialog_width = self.sizeHint().width()
-        dialog_height = self.sizeHint().height()
+        dialog_width = self.width()
+        dialog_height = self.height()
+
         x = (parent_rect.width() - dialog_width) // 2
         y = (parent_rect.height() - dialog_height) // 2
         self.move(x, y)
-        self.update()
-        QApplication.processEvents()
+
         if with_animation:
             self._animate_expand()
         else:
-            self.setFixedHeight(self.sizeHint().height())
+            self.setFixedHeight(self.height())
+
         self.raise_to_top()
 
     def _animate_expand(self) -> None:
@@ -329,3 +336,21 @@ class InlineDialogWidget(QFrame):
         if self in InlineDialogWidget._instances:
             InlineDialogWidget._instances.remove(self)
         super().closeEvent(event)
+
+    def resize_to_content(self, margins: tuple[int, int, int, int] = (0, 0, 0, 0)) -> None:
+        if not self._content_widget or not self._content_widget.layout():
+            return
+
+        content_hint = self._content_widget.sizeHint()
+        if not content_hint.isValid():
+            return
+
+        l, t, r, b = margins
+        w = content_hint.width() + l + r
+        h = content_hint.height() + t + b
+
+        # 如果有标题栏，加上标题栏高度
+        if self._show_title_bar:
+            h += self._title_bar.sizeHint().height()
+
+        self.resize(w, h)

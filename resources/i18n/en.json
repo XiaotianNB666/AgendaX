@@ -30,7 +30,23 @@
         },
         "assignment": {
                 "title": "Add Assignment",
+                "edit_title": "Edit Assignment",
                 "submit": "OK"
         }
+    },
+    "time": {
+        "today": "Today",
+        "tomorrow": "Tomorrow",
+        "day_after_tomorrow": "Day After Tomorrow",
+        "weekday": {
+            "1": "Monday",
+            "2": "Tuesday",
+            "3": "Wednesday",
+            "4": "Thursday",
+            "5": "Friday",
+            "6": "Saturday",
+            "7": "Sunday"
+        },
+        "next_weekday": "Next %{weekday}"
     }
 }

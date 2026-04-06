@@ -99,11 +99,6 @@ def set_property(key: str, value: _T, _type: type[_T] = Any) -> None:
     APP_PROPERTIES[key] = value
 
 def _safe_call_stop_task(stop_task: Callable) -> None:
-    """
-    在非 UI 线程直接调用停止任务时的保护调用，
-    捕获并记录任何异常，避免抛出导致进程崩溃。
-    对于 Qt 已被删除导致的 RuntimeError，仅做 debug 记录并跳过。
-    """
     try:
         stop_task()
     except RuntimeError as e:

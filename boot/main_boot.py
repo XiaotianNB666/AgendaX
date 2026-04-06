@@ -5,12 +5,12 @@ from core.utils.app_thread import Task
 from ui.construct.crash_ui import CrashUI, show_window
 
 
-def on_global_crash(report: CrashReport):
+def on_crash(report: CrashReport):
     crash_ui = CrashUI(report)
     show_window(crash_ui)
 
 # ui
-@crash_handler(f"{APP.name}-ui", on_global_crash)
+@crash_handler(f"{APP.name}-ui", on_crash)
 def ui_main() -> int:
     from ui.main import main
     result = main()
