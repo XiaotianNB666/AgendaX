@@ -1,0 +1,55 @@
+/* ================= ComboBox 基础样式 ================= */
+QComboBox {
+    background-color: #ffffff;
+    border: 1px solid #797775;
+    border-radius: 6px;
+    padding: 8px 36px 8px 12px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+QComboBox:hover {
+    border-color: #565656;
+}
+
+QComboBox:focus {
+    border: 2px solid #0078d4;
+    padding: 7px 35px 7px 11px;
+}
+
+
+/* ================= 下拉按钮 ================= */
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 32px;
+    border-left: 1px solid #d1d1d1;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5
+}
+
+QComboBox::down-arrow {
+    width: 12px;
+    height: 12px;
+    margin-right: 8px;
+}
+
+
+/* ================= 下拉列表 ================= */
+QComboBox QAbstractItemView {
+    background-color: #ffffff;
+    border: 1px solid #797775;
+    border-radius: 6px;
+    padding: 4px;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item {
+    padding: 8px 12px;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QComboBox QAbstractItemView::item:hover {
+    background-color: #f3f3f3;
+}

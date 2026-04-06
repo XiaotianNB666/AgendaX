@@ -4,3 +4,4 @@ build.bat
 build/
 .idea/
 log/
+.app/

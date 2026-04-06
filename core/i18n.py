@@ -52,7 +52,6 @@ def set_locale(locale: str):
         locale: 语言代码，如 'zh-CN', 'en', 'ja'
     """
     i18n.set('locale', locale)
-    print(f"[i18n] 语言已切换为: {locale}")
 
 
 def get_locale() -> str:
@@ -76,7 +75,7 @@ def t(key: str, **kwargs) -> str:
     Returns:
         翻译后的字符串
     """
-    if (not _ok):
+    if not _ok:
         init_i18n()
     return i18n.t(key, **kwargs)
 

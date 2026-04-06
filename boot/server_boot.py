@@ -6,4 +6,4 @@ server: Task = Task(f'{APP.name}-server', lambda: maincore(True), task_type=Task
 
 
 def main():
-    server.execute()
+    server.execute_in_this_thread()

@@ -1,0 +1,35 @@
+#whiteboardWidget {
+    background-color: #f8f8f8;
+}
+
+#drawingArea {
+    border: 1px solid #ccc;
+}
+
+#toolBtn {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    background-color: white;
+}
+
+#toolBtn:hover {
+    background-color: #f0f0f0;
+}
+
+#toolBtn:checked {
+    background-color: #0078d4;
+    color: white;
+}
+
+#actionBtn {
+    padding: 5px 15px;
+    border: 1px solid #0078d4;
+    border-radius: 3px;
+    background-color: #0078d4;
+    color: white;
+}
+
+#actionBtn:hover {
+    background-color: #005a9e;
+}

@@ -22,6 +22,40 @@
             "error": {
                 "init": "无法启动主窗口: 无法初始化UI"
             }
+        },
+        "whiteboard_widget": {
+            "pen": "🖊",
+            "eraser": "⚪",
+            "undo": "撤销",
+            "confirm": "确认",
+            "cancel": "取消",
+            "title": "白板"
+        },
+        "assignment": {
+            "title": "添加作业",
+            "edit_title": "编辑作业",
+            "delete_confirm_title": "删除此作业",
+            "submit": "完成",
+            "delete_confirm_message": "是否删除此作业？"
+        },
+        "common": {
+            "confirm": "是",
+            "cancel": "否"
         }
+    },
+    "time": {
+        "today": "今天",
+        "tomorrow": "明天",
+        "day_after_tomorrow": "后天",
+        "weekday": {
+            "1": "周一",
+            "2": "周二",
+            "3": "周三",
+            "4": "周四",
+            "5": "周五",
+            "6": "周六",
+            "7": "周天"
+        },
+        "next_weekday": "下%{weekday}"
     }
 }

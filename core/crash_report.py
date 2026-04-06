@@ -14,7 +14,7 @@ MAJOR_EXCEPTIONS: list[tuple[Exception, time.struct_time]] = []
 
 class SimpleVarMonitor:
     def __init__(self):
-        self._vars: dict[str, dict] = {}  # 存储变量信息
+        self._vars: dict[str, dict] = {}
         self._lock = threading.Lock()
 
     def watch(self, name: str, initial_value: Any,
@@ -33,7 +33,7 @@ class SimpleVarMonitor:
                 'previous': initial_value,  # 上一次的值
                 'on_change': on_change
             }
-        return self  # 链式调用
+        return self
 
     def update(self, name: str, new_value: Any):
         """
@@ -64,6 +64,10 @@ class SimpleVarMonitor:
                 'previous': self._vars[name]['previous'],
                 'current': self._vars[name]['current']
             }
+
+    @property
+    def vars(self):
+        return self._vars
 
 
 VAR_MONITOR = SimpleVarMonitor()
@@ -105,8 +109,8 @@ class CrashReport:
 
     @property
     def trace_string(self) -> str:
-        def get_string_of(e_struct: tuple[Exception, time.struct_time]) -> str:
-            e = e_struct[0]
+        def get_string_of(_e_struct: tuple[Exception, time.struct_time]) -> str:
+            e = _e_struct[0]
             result_string = ""
             exception_lines_list = traceback.format_exception(type(e), e, e.__traceback__)
             error_name = e.__class__.__name__
@@ -131,23 +135,54 @@ class CrashReport:
                 return f"{t('crash.traceback.caused_crash_exception', e=get_string_of(exceptions.pop(0)))}\n"
             case _:
                 final_string = f"{t('crash.traceback.caused_crash_exception', e=get_string_of(exceptions.pop(0)))}\n"
-                noticable_exception = ""
+                noticeable_exception = ""
                 for i, e_struct in enumerate(exceptions):
-                    noticable_exception += \
+                    noticeable_exception += \
                         f"""[{i}: {time.strftime('%Y-%m-%d %H:%M:%S', e_struct[1])}] {get_string_of(e_struct)}"""
-                final_string += t('crash.traceback.noticeable_exception', exceptions_string=noticable_exception)
+                final_string += t('crash.traceback.noticeable_exception', exceptions_string=noticeable_exception)
                 return final_string
 
     @property
     def var_monitor_string(self) -> str:
-        if (len(VAR_MONITOR._vars) == 0):
+        if len(VAR_MONITOR.vars) == 0:
             return 'No var monitor.'
         return '-' * 10 + '\n' + '\n'.join(
             [f'{k}: {pformat(v.get('current'))} <- {pformat(v.get('previous'))}' for k, v in
-             VAR_MONITOR._vars.items()]) + '\n' + '-' * 10
+             VAR_MONITOR.vars.items()]) + '\n' + '-' * 10
 
 
-def crash_handler(name: str | None = None):
+class StaticCrashReport(CrashReport):
+    def __init__(self, report_string, report_title, formated_time, trace_string, var_monitor_string):
+        self.report_string = report_string
+        self.report_title = report_title
+        self._formated_time = formated_time
+        self._trace_string = trace_string
+        self._var_monitor_string = var_monitor_string
+
+    @property
+    def var_monitor_string(self) -> str:
+        return self._var_monitor_string
+
+    @property
+    def trace_string(self) -> str:
+        return self._trace_string
+
+    @property
+    def formated_time(self) -> str:
+        return self._formated_time
+
+    @property
+    def string(self) -> str:
+        return self.report_string
+
+    def set_exception(self, exception: Exception) -> None:
+        raise AssertionError("StaticCrashReport does not support set_exception")
+
+    def generate(self) -> None:
+        raise AssertionError("StaticCrashReport does not support generate")
+
+
+def crash_handler(name: Optional[str] = None, handler: Optional[Callable[[CrashReport], Any]] = None):
     def decorator(original_function):
         def wrapper(*args, **kwargs):
             result = None
@@ -158,6 +193,8 @@ def crash_handler(name: str | None = None):
                 cr = CrashReport(reason=t("crash.uncaught_exception"))
                 cr.set_exception(e)
                 CRASH_LOG.critical(f'{APP.name} crashed{"" if name is None else f" at {name}"}!!!\n{cr.string}')
+                if handler:
+                    handler(cr)
                 app_force_stop(1)
             return result
 

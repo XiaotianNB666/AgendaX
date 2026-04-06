@@ -1,0 +1,68 @@
+* {
+    font-family: "Microsoft YaHei";
+}
+
+MPushButton {
+    background-color: #f3f3f3;
+    border: 1px solid #d1d1d1;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+/*    min-height: 32px;*/
+    color: #000000;
+}
+
+MPushButton:hover {
+    background-color: #e5e5e5;
+    border-color: #c1c1c1;
+}
+
+MPushButton:pressed {
+    background-color: #d9d9d9;
+    border-color: #b1b1b1;
+}
+
+MPushButton:checked {
+    border: 2px solid #0067c0;
+    padding: 7px 15px;
+}
+
+MPushButton:focus {
+    border: 2px solid #0067c0;
+    padding: 7px 15px;
+}
+
+MPushButton#primaryButton {
+    background-color: #0078d4;
+    border: 1px solid #0078d4;
+    color: #ffffff;
+}
+
+MPushButton#primaryButton:hover {
+    background-color: #1084d8;
+    border-color: #1084d8;
+}
+
+MPushButton#primaryButton:pressed {
+    background-color: #006cbd;
+    border-color: #006cbd;
+}
+
+MPushButton#primaryButton:focus {
+    border: 2px solid #005a9e;
+    padding: 7px 15px;
+}
+
+MPushButton#acrylicButton {
+    background-color: rgba(255, 255, 255, 200);
+    border: 1px solid rgba(0, 0, 0, 10);
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+MPushButton#acrylicButton:hover {
+    background-color: rgba(255, 255, 255, 230);
+}
