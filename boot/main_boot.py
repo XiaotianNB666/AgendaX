@@ -10,6 +10,10 @@ def on_crash(report: CrashReport):
     show_window(crash_ui)
 
 
+def on_crash(report: CrashReport):
+    crash_ui = CrashUI(report)
+    show_window(crash_ui)
+
 # ui
 @crash_handler(f"{APP.name}-ui", on_crash)
 def ui_main() -> int:
