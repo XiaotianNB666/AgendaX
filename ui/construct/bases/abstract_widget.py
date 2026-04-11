@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import override
 
 from PyQt5 import QtCore
-from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QLineEdit, QComboBox
 
 from ui.construct.bases.core_widgets import QSSWidget, LayoutWidget
@@ -64,6 +62,7 @@ class MComboBox(QComboBox, QSSWidget):
         super().__init__(parent)
         self.load()
         self.setStyleSheet(load_qss_s('combo_box', theme))
+
 
 class MLineEdit(QLineEdit, QSSWidget):
     def __init__(self, parent=None):

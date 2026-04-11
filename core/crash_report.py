@@ -151,6 +151,7 @@ class CrashReport:
              VAR_MONITOR.vars.items()]) + '\n' + '-' * 10
 
 
+# noinspection PyMissingConstructor
 class StaticCrashReport(CrashReport):
     def __init__(self, report_string, report_title, formated_time, trace_string, var_monitor_string):
         self.report_string = report_string

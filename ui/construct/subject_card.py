@@ -1,8 +1,8 @@
 import time
 from typing import Optional
 
-from PyQt5.QtWidgets import QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
-from PyQt5.QtCore import Qt, QSize, QBuffer, QIODevice
+from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy
+from PyQt5.QtCore import Qt, QBuffer, QIODevice
 from PyQt5.QtGui import QFont
 
 from core.app import get_property, get_server
@@ -17,7 +17,7 @@ from ui.utils.qss_loader import load_qss_s
 
 
 class SubjectCard(Card):
-    def __init__(self, subject: 'Subject', dialog_parent=None, auto_load=True):
+    def __init__(self, subject, dialog_parent=None, auto_load=True):
         self._subject_label = None
         from ui.main import Subject
         self._assignments_layout = None
@@ -76,10 +76,9 @@ class SubjectCard(Card):
         self._assignments_layout.setSpacing(6)
         self._assignments_layout.setAlignment(Qt.AlignTop)
 
-        # ✅ 关键：设置容器大小策略
         self._assignments_container.setSizePolicy(
             QSizePolicy.Expanding,
-            QSizePolicy.Preferred  # 改为 Preferred 而不是 Expanding
+            QSizePolicy.Preferred
         )
 
         main_layout.addWidget(self._assignments_container)
@@ -87,7 +86,6 @@ class SubjectCard(Card):
         main_layout.setStretch(main_layout.indexOf(self._subject_label), 0)
         main_layout.setStretch(main_layout.indexOf(self._assignments_container), 1)
 
-        # ✅ 关键：设置卡片大小策略
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
     def _handle_add_assignment(self):
@@ -110,14 +108,14 @@ class SubjectCard(Card):
                     sv.save_resource(file_name=hashed, data=data)
                 else:
                     sv.send_packet(None, ResourceResponsePacket.create(hashed, data))
-                ass = Assignment.create(self._subject.id, 'file:img', hashed, time.time(), time.time() + 3600, '晚一')
+                ass = Assignment.create(self._subject.id, 'file:img', hashed, time.time(), (t:=self._add_assignment_dialog.assignment_widget.get_finish_time())[0], t[1])
                 sv.update_assignment(ass)
                 buffer.close()
                 label = ImageLabel(img)
             else:
                 pass
         else:
-            ass = Assignment.create(self._subject.id, 'text', text, time.time(), time.time() + 3600, '晚一')
+            ass = Assignment.create(self._subject.id, 'text', text, time.time(), (t:=self._add_assignment_dialog.assignment_widget.get_finish_time())[0], t[1])
             label = MLabel()
             label.setText(text)
             label.setStyleSheet(load_qss_s("subject_label_", self._theme))

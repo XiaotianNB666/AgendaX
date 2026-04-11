@@ -9,7 +9,9 @@ from core.utils.path_utils import get_work_dir
 
 class SettingsSavedEvent(Event):
     def __init__(self, settings: dict):
+        super().__init__()
         self.settings = settings
+
     def get_value(self) -> Any:
         return self.settings
 
@@ -90,7 +92,7 @@ class Settings:
         }
         return self._settings
 
-    def _save(self, e: Event) -> None:
+    def _save(self) -> None:
         with open(os.path.join(get_work_dir('.app'), '.settings'), 'w', encoding='utf-8') as f:
             s = json.dumps(self._settings, ensure_ascii=False)
             f.write(s)

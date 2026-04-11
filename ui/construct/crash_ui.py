@@ -67,10 +67,6 @@ class CrashUI(QWidget):
 
 
 def show_window(ui: CrashUI):
-    """
-    使用已有 QApplication 时直接 show（非阻塞），没有时再创建并 exec_（阻塞）。
-    这样避免重复创建 QApplicaton 导致的崩溃。
-    """
     app = QApplication.instance()
     created = False
     if app is None:
@@ -78,8 +74,6 @@ def show_window(ui: CrashUI):
         created = True
     ui.show()
     if created:
-        # 如果是新创建的 app，阻塞并运行事件循环
         app.exec_()
     else:
-        # 如果已有 app，在 UI 线程安全地确保窗口显示（若从非 UI 线程调用，应先切换到主线程）
         QTimer.singleShot(0, lambda: None)

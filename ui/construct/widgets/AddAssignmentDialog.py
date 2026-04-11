@@ -1,13 +1,4 @@
-from typing import override
-
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
-
-from core.i18n import t
-from ui.construct.bases.abstract_widget import MLineEdit
 from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
-from ui.construct.widgets.WhiteboardWidget import WhiteboardWidget
-from ui.utils.qss_loader import load_qss_s
 
 from typing import override
 from PyQt5.QtGui import QFont
@@ -21,9 +12,9 @@ from ui.construct.widgets.TimeSelectWidget import TimeSelectWidget
 
 
 class AddAssignmentWidget(WhiteboardWidget):
-    def __init__(self, parent=None, theme=None, pen_color='#000000'):
+    def __init__(self, parent=None, theme=None, pen_color='#000000', background_color='#ffffff'):
         self.theme = theme
-        super().__init__(parent, pen_color)
+        super().__init__(parent, pen_color, background_color)
         self._init_text_input()
         self._init_time_select()
 
@@ -62,6 +53,9 @@ class AddAssignmentWidget(WhiteboardWidget):
     def get_finish_time(self) -> tuple[float, str]:
         return self.time_select.get_datetime()
 
+    def get_finish_time_type(self) -> str:
+        return self.time_select.get_time_text()
+
     @override
     def clear(self):
         self.text_input.clear()
@@ -73,7 +67,8 @@ class AddAssignmentDialog(InlineDialogWidget):
             parent=None,
             title=t('ui.assignment.title'),
             theme=None,
-            subject_color: str = '#000000'
+            subject_color: str = '#000000',
+            background_color: str = '#ffffff'
     ):
         super().__init__(parent, title, draggable=True, show_title_bar=True)
 
@@ -84,7 +79,8 @@ class AddAssignmentDialog(InlineDialogWidget):
         self.assignment_widget = AddAssignmentWidget(
             self,
             theme=self.theme,
-            pen_color=subject_color
+            pen_color=subject_color,
+            background_color=background_color
         )
 
         self.assignment_widget.text_input.setStyleSheet(

@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod, ABCMeta
-from PyQt5.QtWidgets import QListWidget, QWidget, QFrame
+from PyQt5.QtWidgets import QWidget, QFrame
 
 from ui.construct.bases.abstract_widget import ModernWidget
 

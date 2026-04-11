@@ -17,6 +17,7 @@ def get_base_dir() -> str:
 def get_res_path(path: str = "") -> str:
     return os.path.join(get_base_dir(), 'resources', path)
 
+
 @cache
 def get_work_dir(path: str = "") -> str:
     return os.path.join('.', path)

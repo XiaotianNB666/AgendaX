@@ -23,7 +23,6 @@ class RemoteServer(AgendaXServer):
         self._response_handlers: dict[str, Callable] = {}
         super().__init__(create_socket=False)
 
-
     # 覆写 start，使之作为客户端启动
     def start(self):
         if self._state != ServerState.INIT:
@@ -108,7 +107,8 @@ class RemoteServer(AgendaXServer):
         except Exception as e:
             self.LOG.error(f"Failed to send request: {e}", exc_info=True)
 
-    def request_resource(self, resource_type: str, identifier: str, resource_response_handler: Optional[Callable] = None) -> bool:
+    def request_resource(self, resource_type: str, identifier: str,
+                         resource_response_handler: Optional[Callable] = None) -> bool:
         """通过 ResourceRequestPacket 请求资源（例如 data_type='file:img'）"""
         if not self.is_connected or not self.remote_socket:
             self.LOG.warning("Not connected to remote server")
