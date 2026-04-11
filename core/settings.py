@@ -85,9 +85,9 @@ class Settings:
             'theme': 'classic',
             'lang': 'zh-CN',
             'time_mapping': {
-                '晚一': '19:25',
-                '晚二': '20:20',
-                '晚三': '21:45'
+                '晚一': '19:25:00',
+                '晚二': '20:20:00',
+                '晚三': '21:45:00'
             }
         }
         return self._settings
