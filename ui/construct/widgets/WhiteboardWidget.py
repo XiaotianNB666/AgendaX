@@ -1,13 +1,4 @@
-from typing import Callable
-
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QSizePolicy)
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QPainter, QPen, QColor, QPaintEvent, QMouseEvent, QImage
-
-from ui.construct.bases.abstract_widget import MPushButton, ModernWidgetLight
-from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
-from core.i18n import t
-
+from PyQt5.QtWidgets import QSizePolicy
 
 from typing import Callable
 
@@ -21,20 +12,21 @@ from core.i18n import t
 
 
 class WhiteboardWidget(QWidget):
-    def __init__(self, parent: InlineDialogWidget, pen_color='#000000'):
+    def __init__(self, parent: InlineDialogWidget, pen_color='#000000', background_color='#ffffff'):
         super().__init__(parent)
+
         self._parent = parent
 
         self._current_path = []
         self._paths = []
-        self.__pen_color = pen_color
-        self._pen_color = QColor(self.__pen_color)
+        self._original_pen_color = pen_color
+        self._pen_color = QColor(self._original_pen_color)
+        self._background_color = background_color
         self._pen_width = 3
         self._drawing = False
         self._last_point = QPoint()
         self._temp_image = None
 
-        # ✅ 背景图
         self._background_image = QImage()
 
         self.confirm_handler: Callable[[InlineDialogWidget], None] = lambda d: None
@@ -107,13 +99,11 @@ class WhiteboardWidget(QWidget):
         painter = QPainter(self._drawing_area)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # ✅ 背景
         if not self._background_image.isNull():
             painter.drawImage(self._drawing_area.rect(), self._background_image)
         else:
-            painter.fillRect(event.rect(), Qt.white)
+            painter.fillRect(event.rect(), QColor(self._background_color))
 
-        # ✅ 历史路径
         for path_data in self._paths:
             pen = QPen(path_data['color'], path_data['width'])
             painter.setPen(pen)
@@ -121,7 +111,6 @@ class WhiteboardWidget(QWidget):
             for i in range(1, len(points)):
                 painter.drawLine(points[i - 1], points[i])
 
-        # ✅ 当前路径
         if self._drawing and len(self._current_path) > 1:
             pen = QPen(self._pen_color, self._pen_width)
             painter.setPen(pen)
@@ -157,14 +146,16 @@ class WhiteboardWidget(QWidget):
     def _on_pen_clicked(self):
         self._pen_btn.setChecked(True)
         self._eraser_btn.setChecked(False)
-        self._pen_color = QColor(self.__pen_color)
+
+        self._pen_color = QColor(self._original_pen_color)
         self._pen_width = 3
 
     def _on_eraser_clicked(self):
         self._eraser_btn.setChecked(True)
         self._pen_btn.setChecked(False)
-        self._pen_color = QColor(255, 255, 255)
-        self._pen_width = 15
+
+        self._pen_color = QColor(self._background_color)
+        self._pen_width = 20
 
     def _undo_last_step(self):
         if self._paths:
@@ -193,12 +184,7 @@ class WhiteboardWidget(QWidget):
         self._current_path.clear()
         self._drawing_area.update()
 
-    # ================= 对外接口 =================
-
     def set_image(self, data: QImage):
-        """
-        从 bytes 加载图片作为背景
-        """
         image = data
 
         if image.isNull():
@@ -221,9 +207,6 @@ class WhiteboardDialog(InlineDialogWidget):
 
     def __init__(self, parent=None, title='Whiteboard'):
         super().__init__(parent, title, draggable=True, show_title_bar=True)
-
-        # self.setMinimumSize(400, 300)
-        # self.resize(500, 350)
 
         self._whiteboard = WhiteboardWidget(self)
 

@@ -40,6 +40,7 @@ IS_BUILTIN = False
 SERVER: Optional[AgendaXServer] = None
 APP_PROPERTIES: dict[str, Any] = {}
 
+
 # 原先直接在默认 STOP_TASKS 中触发 ExitEvent，可能在非 UI 线程导致 Qt 本地层异常（0xC0000005）
 def _default_stop_fire_exit():
     """
@@ -95,8 +96,10 @@ _T = TypeVar('_T')
 def get_property(key: str, default: _T = None, _type: type[_T] = Any) -> _T:
     return APP_PROPERTIES.get(key, default)
 
+
 def set_property(key: str, value: _T, _type: type[_T] = Any) -> None:
     APP_PROPERTIES[key] = value
+
 
 def _safe_call_stop_task(stop_task: Callable) -> None:
     try:

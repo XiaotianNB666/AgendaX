@@ -1,6 +1,6 @@
+import os
 import signal
 import time
-import os
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -8,7 +8,7 @@ from socket import socket, AF_INET, SOCK_STREAM
 from typing import Callable, Sequence, Optional
 
 from sqlalchemy import delete
-from sqlmodel import create_engine, Session, select, SQLModel, Field
+from sqlmodel import create_engine, Session, select, SQLModel
 
 from core.db.models import AssignmentTable, AssignmentRecord, ExerciseSubjectTable
 from core.events import register_event_handler, ExitEvent, fire_event, Event
@@ -147,6 +147,26 @@ class DatabaseHelper:
             )
             return session.exec(stmt).all()
 
+    def get_assignment_by_ass_id(self, _id: int):
+        with Session(self.engine) as session:
+            model = AssignmentTable
+
+            stmt = select(model).where(model.id == _id)
+            rows = session.exec(stmt).all()
+
+            return [
+                Assignment(
+                    id=row.id,
+                    subject=row.subject,
+                    data_type=row.data_type,
+                    data=row.data,
+                    start_time=row.start_time,
+                    finish_time=row.finish_time,
+                    finish_time_type=row.finish_time_type,
+                )
+                for row in rows
+            ]
+
 
 class ServerStartedEvent(Event):
     def __init__(self, server):
@@ -165,6 +185,10 @@ class ServerState(Enum):
     RUNNING = auto()
     STOPPING = auto()
     STOPPED = auto()
+
+
+def get_objects_path(identity: str) -> str:
+    return os.path.join(get_work_dir('.app'), '_objects', identity)
 
 
 def get_res_data(identity: str) -> bytes:
@@ -227,8 +251,6 @@ class AgendaXServer:
         self.LOG.info("Starting AgendaXServer...")
         self._state = ServerState.RUNNING
 
-        # 如果没有 socket（例如 RemoteServer 会覆写或用不同逻辑），尝试调用 handle_connection，
-        # 子类可覆写 handle_connection 做适当的行为
         try:
             self.handle_connection()
         except Exception as e:
@@ -249,7 +271,7 @@ class AgendaXServer:
         except Exception as e:
             self.LOG.debug(f"Executor shutdown error: {e}", exc_info=True)
 
-        # 关闭 socket（若存在），忽略异常
+        # 关闭 socket
         if self._socket is not None:
             try:
                 self._socket.close()
@@ -266,7 +288,7 @@ class AgendaXServer:
     # =========================
     # Signal
     # =========================
-    def _signal_handler(self, signum, frame):
+    def _signal_handler(self, signum):
         self.LOG.warning(f"Received signal {signum}, initiating shutdown...")
         self.shutdown()
 
@@ -342,8 +364,8 @@ class AgendaXServer:
                     self.del_assignment_by_id(subject_id)
                 elif isinstance(packet, ResourceResponsePacket):
                     data = packet.get_value()
-                    file_name = data.__hash__()
-                    self.save_resource(str(file_name), data)
+                    file_name = data[1].__hash__() if data[0] is None else data[0]
+                    self.save_resource(str(file_name), data[1])
                 elif isinstance(packet, ResourceRequestPacket):
                     identity = packet.get_value()
                     file = get_res_data(identity)
@@ -441,38 +463,57 @@ class AgendaXServer:
     def get_assignment_by_id(self, subject_id: str):
         return self.database.get_by_subject(subject_id, table="AssignmentTable")
 
-    def del_assignment_by_id(self, subject_id: int):
+    def _del_assignment_by_id(self, subject_id: int):
         with Session(self.database.engine) as session:
             stmt = delete(AssignmentTable).where(AssignmentTable.id == subject_id)
             session.exec(stmt)
             session.commit()
 
+    def del_assignment(self, ass: Assignment):
+        if ass.data_type.startswith('file:'):
+            try:
+                os.remove(get_objects_path(ass.data))
+            except FileNotFoundError:
+                pass
+        self._del_assignment_by_id(ass.id)
+
     def update_assignment(self, assignment: Assignment):
-        with Session(self.database.engine) as session:
-            if assignment.id is None:
-                self.database.add(assignment)
-                return
+        try:
+            with Session(self.database.engine) as session:
+                if assignment.id is None:
+                    self.database.add(assignment)
+                    return
 
-            stmt = (
-                select(AssignmentTable)
-                .where(AssignmentTable.id == assignment.id)
-            )
-            existing = session.exec(stmt).one_or_none()
+                stmt = (
+                    select(AssignmentTable)
+                    .where(AssignmentTable.id == assignment.id)
+                )
+                existing = session.exec(stmt).one_or_none()
 
-            if not existing:
-                self.database.add(assignment)
-                return
+                if not existing:
+                    self.database.add(assignment)
+                    return
 
-            existing.subject = assignment.subject
-            existing.data_type = assignment.data_type
-            existing.data = assignment.data
-            existing.start_time = assignment.start_time
-            existing.finish_time = assignment.finish_time
-            existing.finish_time_type = assignment.finish_time_type
+                existing.subject = assignment.subject
+                existing.data_type = assignment.data_type
+                existing.data = assignment.data
+                existing.start_time = assignment.start_time
+                existing.finish_time = assignment.finish_time
+                existing.finish_time_type = assignment.finish_time_type
 
-            session.add(existing)
-            session.commit()
+                session.add(existing)
+                session.commit()
+        except Exception as e:
+            self.LOG.error(f"Failed to update assignment: {e}", exc_info=True)
 
     @property
     def is_local(self) -> bool:
         return True
+
+    def del_assignment_by_id(self, id):
+        try:
+            for it in self.database.get_assignment_by_ass_id(id):
+                self.del_assignment(it)
+        except:
+            import traceback
+            traceback.print_exc()

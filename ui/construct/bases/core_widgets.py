@@ -24,7 +24,6 @@ class LayoutWidget(QWidget):
         self._setup_ui()
 
     def _setup_ui(self):
-        """初始化UI布局"""
         # 主垂直布局
         self._main_layout = QVBoxLayout(self)
         self._main_layout.setContentsMargins(0, 0, 0, 0)
@@ -78,7 +77,6 @@ class LayoutWidget(QWidget):
         self._middle_layout.setStretch(2, 0)  # right
 
     def _clear_layout(self, layout: QLayout):
-        """清空布局中的所有控件"""
         while layout.count():
             item = layout.takeAt(0)
             widget = item.widget()
@@ -86,31 +84,30 @@ class LayoutWidget(QWidget):
                 widget.setParent(None)
                 widget.deleteLater()
 
-    def _set_widget(self, container: QWidget, layout: QLayout, child: QWidget):
-        """将子控件添加到指定容器"""
+    def _set_widget(self, layout: QLayout, child: QWidget):
         self._clear_layout(layout)
         if child:
             layout.addWidget(child)
 
     def set_center(self, child: QWidget):
         """设置中心区域控件"""
-        self._set_widget(self._center_widget, self._center_layout, child)
+        self._set_widget(self._center_layout, child)
 
     def set_left(self, child: QWidget):
         """设置左侧区域控件"""
-        self._set_widget(self._left_widget, self._left_layout, child)
+        self._set_widget(self._left_layout, child)
 
     def set_right(self, child: QWidget):
         """设置右侧区域控件"""
-        self._set_widget(self._right_widget, self._right_layout, child)
+        self._set_widget(self._right_layout, child)
 
     def set_top(self, child: QWidget):
         """设置顶部区域控件"""
-        self._set_widget(self._top_widget, self._top_layout, child)
+        self._set_widget(self._top_layout, child)
 
     def set_bottom(self, child: QWidget):
         """设置底部区域控件"""
-        self._set_widget(self._bottom_widget, self._bottom_layout, child)
+        self._set_widget(self._bottom_layout, child)
 
     def get_center(self) -> QWidget:
         return self._center_widget

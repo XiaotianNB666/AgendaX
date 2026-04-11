@@ -1,6 +1,6 @@
 from typing import Callable
 from PyQt5.QtWidgets import (
-    QWidget, QApplication, QLabel, QPushButton, QVBoxLayout
+    QWidget, QApplication, QLabel, QPushButton, QVBoxLayout, QGraphicsDropShadowEffect
 )
 from PyQt5.QtCore import (
     Qt, QPoint, QPropertyAnimation, QEasingCurve,
@@ -106,6 +106,8 @@ class AgendaXFloatingBall(QWidget):
         self._is_dragging = False
         self._menu_ball = MenuBall(self)
 
+        self._last_pos = None
+
         self._init_ui()
 
     def _init_ui(self):
@@ -129,7 +131,6 @@ class AgendaXFloatingBall(QWidget):
             self.qss_loader.load(opacity_high=self._opacity_high)
         )
 
-        from PyQt5.QtWidgets import QGraphicsDropShadowEffect
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(15)
         shadow.setColor(QColor(0, 0, 0, 60))
@@ -151,7 +152,14 @@ class AgendaXFloatingBall(QWidget):
 
     def show(self):
         screen = QApplication.primaryScreen().geometry()
-        self.move(screen.width() - 80, screen.height() - 80)
+
+        if self._last_pos:
+            self.move(self._last_pos)
+        else:
+            default_x = screen.width() - 80
+            default_y = screen.height() - 180
+            self.move(default_x, default_y)
+
         self._timer.start(20)
         super().show()
 
@@ -190,6 +198,7 @@ class AgendaXFloatingBall(QWidget):
     def mouseReleaseEvent(self, e):
         if e.button() == Qt.LeftButton:
             if self._is_dragging:
+                self._last_pos = self.pos()
                 e.accept()
                 self._is_dragging = False
                 return

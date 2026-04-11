@@ -34,7 +34,8 @@ class ReceiverGroup(Enum):
 
 
 # Helper: normalize various receiver inputs to a set of Receiver enum members
-def _to_receiver_set(value: Optional[Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]]) -> Optional[Set[Receiver]]:
+def _to_receiver_set(value: Optional[Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]]) -> \
+Optional[Set[Receiver]]:
     if value is None:
         return None
     # Single Receiver
@@ -77,7 +78,8 @@ class Event(ABC):
 
 
 class EventHandler:
-    def __init__(self, func: Callable, receiver: Optional[Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
+    def __init__(self, func: Callable,
+                 receiver: Optional[Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
         # handler 的接收者总是以 Receiver 的集合形式保存，默认允许所有人
         self.receiver_raw = receiver if receiver is not None else ReceiverGroup.ALL
         self.receivers: Set[Receiver] = _to_receiver_set(self.receiver_raw) or set()
@@ -94,7 +96,8 @@ class EventHandler:
 _EVENTS: dict[str, list[EventHandler]] = {}
 
 
-def fire_event(event: Event, receiver_group: Optional[Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
+def fire_event(event: Event, receiver_group: Optional[
+    Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
     """
     dispatch event to handlers whose receivers intersect with receiver_group.
     If receiver_group is None => dispatch to all registered handlers for this event id.
@@ -108,12 +111,16 @@ def fire_event(event: Event, receiver_group: Optional[Union[Receiver, ReceiverGr
             handler.execute(event)
 
 
-def fire_event_async(event: Event, receiver_group: Optional[Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
+def fire_event_async(event: Event, receiver_group: Optional[
+    Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
     Task(f"fire_event${event.id}", lambda: fire_event(event, receiver_group), Task.MIN).execute()
 
 
 _T = TypeVar('_T', bound=Event)
-def register_event_handler(event: type[_T], func: Callable[[_T], Any], receiver: Optional[Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
+
+
+def register_event_handler(event: type[_T], func: Callable[[_T], Any], receiver: Optional[
+    Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
     """
     注册处理器。event 参数为 Event 子类（类型），func 接收该事件实例（或子类型）。
     receiver 可以传 Receiver、ReceiverGroup 或可迭代的上述元素集合。默认为 ReceiverGroup.ALL。

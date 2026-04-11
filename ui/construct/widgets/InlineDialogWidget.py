@@ -1,12 +1,12 @@
-from PyQt5.QtWidgets import (QFrame, QWidget, QVBoxLayout, QHBoxLayout,
-                             QPushButton, QApplication, QLabel, QGraphicsOpacityEffect)
-from PyQt5.QtCore import Qt, QPoint, QTimer, QParallelAnimationGroup
-from PyQt5.QtGui import QMouseEvent
-from typing_extensions import override
-
 from typing import Optional, List
 
-from ui.construct.bases.abstract_widget import MPushButton, MLabel
+from PyQt5.QtCore import Qt, QPoint, QTimer, QParallelAnimationGroup
+from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtWidgets import (QFrame, QWidget, QVBoxLayout, QHBoxLayout,
+                             QPushButton, QLabel, QGraphicsOpacityEffect)
+from typing_extensions import override
+
+from ui.construct.bases.abstract_widget import MLabel
 from ui.utils.qss_loader import load_qss_s
 
 

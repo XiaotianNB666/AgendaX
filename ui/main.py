@@ -6,24 +6,24 @@ from typing import Optional
 from PyQt5.QtCore import QTimer, QThread, Qt, QByteArray
 from PyQt5.QtGui import QMouseEvent, QImage
 from PyQt5.QtWidgets import (
-    QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout, QSizePolicy, QLabel
+    QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout, QSizePolicy
 )
 
 from core.app import APP, register_stop, get_server, set_server, get_property
 from core.crash_report import CrashReport
 from core.events import register_event_handler, ExitEvent
 from core.i18n import t
-from core.server.packets import ResourceResponsePacket
 from core.server.server import AgendaXServer, ServerStartedEvent, Assignment, get_res_data
 from core.settings import Settings
 from core.utils.logger.logging import getLogger
 from core.utils.path_utils import get_res_path
 from platforms.windows.winui import enable_win_blur_background
-
+from ui.construct.bases.abstract_widget import MLabel
 from ui.construct.floating_ball import AgendaXFloatingBall
 from ui.construct.subject_card import SubjectCard
 from ui.construct.widgets.AssignmentCard import AssignmentCard, ImageLabel
 from ui.utils.RemoteServer import RemoteServer
+from ui.utils.qss_loader import load_qss_s
 
 LOG = getLogger(f'{APP.name}-ui')
 UICRASH = CrashReport()
@@ -165,6 +165,7 @@ class MainWindow(QMainWindow):
         self.clear_subjects()
 
         settings_obj = get_property('settings', _type=Settings)
+        self.settings = settings_obj
         self.subjects = []
 
         if not settings_obj:
@@ -201,6 +202,19 @@ class MainWindow(QMainWindow):
                                          self._handle_res(subject, ass, data)
                                          )
                                             )
+                elif ass.data_type == 'text':
+                    text: str = ass.data
+                    label = MLabel()
+                    label.setText(text)
+                    label.setStyleSheet(load_qss_s("subject_label_", self.settings.get('theme', 'classic')))
+                    label.set_color(color=subject.color)
+
+                    ass_card = AssignmentCard(ass, server=self.server, theme=self.settings.get('theme', 'classic'),
+                                              _settings=self.settings,
+                                              _dialog_parent=self.centralWidget())
+                    ass_card.set(label)
+
+                    subject.assignments_card.add_assignment(ass_card)
 
         self.subject_layout.addStretch(1)
 

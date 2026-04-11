@@ -13,7 +13,6 @@ from ui.construct.bases.abstract_widget import MLabel, MPushButton
 from ui.construct.bases.card import Card
 from ui.construct.widgets.AddAssignmentDialog import AddAssignmentDialog
 from ui.construct.widgets.InlineDialogWidget import InlineDialogWidget
-from ui.utils.RemoteServer import RemoteServer
 from ui.utils.qss_loader import load_qss_s
 from core.utils import time_utils
 
@@ -112,8 +111,10 @@ class AssignmentCard(Card):
             server: Optional[AgendaXServer] = None,
             theme=None,
             _settings=None,
-            _dialog_parent=None
+            _dialog_parent=None,
+            _subject_color="#000000"
     ):
+        self._subject_color = _subject_color
         self._time_label = None
         self._delete_label = None
         self._custom_progress = None
@@ -230,7 +231,7 @@ class AssignmentCard(Card):
         self._edit_dialog = AddAssignmentDialog(
             parent=self._dialog_parent,
             theme=None,
-            subject_color="#FFFFFF"
+            subject_color=self._subject_color
         )
 
         self._edit_dialog.set_title(t('ui.assignment.edit_title'))

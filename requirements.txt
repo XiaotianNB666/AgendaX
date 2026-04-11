@@ -2,3 +2,4 @@ python-i18n
 pyqt5
 pywin32
 sqlmodel
+pyinstaller

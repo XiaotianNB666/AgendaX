@@ -1,10 +1,9 @@
 # ui/construct/widgets/TimeSelectWidget.py
-import time
 
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QSizePolicy
 
-from core.settings import Settings
 from core.app import get_property
+from core.settings import Settings
 from core.utils import time_utils, dict_utils
 from core.utils.dict_utils import get_key_from_value
 from ui.construct.bases.abstract_widget import MComboBox
@@ -69,3 +68,6 @@ class TimeSelectWidget(QWidget):
         the_time = time_utils.get_closest_time(int(timestamp), [v for _, v in self.mapping.items()])
         the_time = dict_utils.get_key_from_value(self.mapping, the_time)
         self.time_combo.setCurrentIndex(list(self.mapping).index(the_time))
+
+    def get_time_text(self):
+        return self.time_combo.currentText()

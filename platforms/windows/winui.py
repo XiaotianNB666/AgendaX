@@ -13,7 +13,7 @@ def enable_win_blur_background(window: QWidget, blur_type: int = 1) -> QWidget |
     - 设置半透明深色背景
     """
     if sys.platform != "win32":
-        return  # 非 Windows 不执行
+        return None # 非 Windows 不执行
 
     # 1. 无边框 + 全屏
     window.setWindowFlags(Qt.FramelessWindowHint)  # type: ignore
