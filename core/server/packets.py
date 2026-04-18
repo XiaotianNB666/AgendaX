@@ -60,12 +60,15 @@ class HelloPacket(Packet):
 
     @classmethod
     def create(cls):
-        from core.app import version
+        from core.app import version, get_property
+        return cls(cls.type(), f'{version()}\ue000{get_property('settings').get('display_name', 'unknown')}'.encode('utf-8'))
 
-        return cls(cls.type(), f'{version()}'.encode('utf-8'))
+    def get_value(self) -> tuple[str, str]:
+        data = self.data.decode('utf-8')
+        version = data.split('\ue000')[0]
+        device_name = data[len(version) + 1:]
+        return version, device_name
 
-    def get_value(self):
-        return self.data.decode('utf-8')
 
     def to_bytes(self) -> bytes:
         return _generate_packet_bytes(get_key_from_value(PACKETS, HelloPacket), self.data)

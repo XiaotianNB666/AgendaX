@@ -6,7 +6,7 @@ from typing import Optional
 from PyQt5.QtCore import QFile, QIODevice
 from PyQt5.QtWidgets import QWidget
 
-from core.events import SettingsLoadedEvent, register_event_handler
+from core.events import SettingsEvent, register_event_handler
 from core.settings import Settings
 from core.utils.path_utils import get_res_path
 from core.utils.string_utils import snake
@@ -126,9 +126,9 @@ def load_qss_s(name: str, theme: Optional[str] = None, **kargs):
     return qss
 
 
-def _set_settings(settings: SettingsLoadedEvent):
+def _set_settings(settings: SettingsEvent):
     global SETTINGS
     SETTINGS = settings.get_value()
 
 
-register_event_handler(SettingsLoadedEvent, _set_settings)
+register_event_handler(SettingsEvent, _set_settings)

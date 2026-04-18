@@ -33,7 +33,8 @@
             "edit_title": "Edit Assignment",
             "delete_confirm_title": "Delete this assignment",
             "submit": "OK",
-            "delete_confirm_message": "Do you want to delete this assignment?"
+            "delete_confirm_message": "Do you want to delete this assignment?",
+            "text_input": "type the text..."
         },
         "common": {
             "confirm": "yes",
@@ -54,5 +55,17 @@
             "7": "Sunday"
         },
         "next_weekday": "Next %{weekday}"
+    },
+    "settings": {
+        "title": "Settings",
+        "theme": "Theme",
+        "language": "Language",
+        "draggable": "Draggable",
+        "save": "Save",
+        "cancel": "Cancel",
+        "restart_hint": "Some changes require restart",
+        "text_icon": "⚙",
+        "display_name": "Display name on other devices",
+        "display_name_hint": "This name will be shown on casting or remote devices"
     }
 }

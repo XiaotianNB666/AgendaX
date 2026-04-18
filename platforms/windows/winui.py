@@ -2,8 +2,9 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPalette
 import sys
-import ctypes
+# import ctypes
 
+# windows 11 毛玻璃效果不佳。取消
 
 def enable_win_blur_background(window: QWidget, blur_type: int = 1) -> QWidget | None:
     """
@@ -31,12 +32,12 @@ def enable_win_blur_background(window: QWidget, blur_type: int = 1) -> QWidget |
     central_widget.setPalette(palette)
 
     # 4. Windows DWM 毛玻璃模糊
-    hwnd = int(window.winId())
-    ctypes.windll.dwmapi.DwmSetWindowAttribute(
-        hwnd,
-        38,
-        ctypes.byref(ctypes.c_int(blur_type)),
-        ctypes.sizeof(ctypes.c_int),
-    )
+    # hwnd = int(window.winId())
+    # ctypes.windll.dwmapi.DwmSetWindowAttribute(
+    #     hwnd,
+    #     38,
+    #     ctypes.byref(ctypes.c_int(blur_type)),
+    #     ctypes.sizeof(ctypes.c_int),
+    # )
 
     return central_widget

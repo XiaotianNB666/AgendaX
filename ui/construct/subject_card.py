@@ -118,7 +118,7 @@ class SubjectCard(Card):
             ass = Assignment.create(self._subject.id, 'text', text, time.time(), (t:=self._add_assignment_dialog.assignment_widget.get_finish_time())[0], t[1])
             label = MLabel()
             label.setText(text)
-            label.setStyleSheet(load_qss_s("subject_label_", self._theme))
+            label.setStyleSheet(load_qss_s("label_assignment", self._theme))
             label.set_color(color=self._subject.color)
             if sv := get_server():
                 sv.update_assignment(ass)

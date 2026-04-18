@@ -1,0 +1,17 @@
+MLabel {
+    background-color: #FAF8F0;
+    font-size: 50px;
+    font-style: bold;
+}
+
+QLabel {
+    border: 1px dashed #FAF8F0;
+    border-radius: 6px;
+    background-color: #FAF8F0;
+}
+
+QLabel:hover {
+    border: 1px dashed #FAF8F0;
+    border-radius: 6px;
+    background-color: #FAF8F0;
+}

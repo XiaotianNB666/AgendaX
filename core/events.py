@@ -89,7 +89,6 @@ class EventHandler:
         try:
             self.func(event)
         except Exception:
-            # 不在此文件中引入日志，保持灵活；上层可捕获或日志化
             raise
 
 
@@ -113,7 +112,7 @@ def fire_event(event: Event, receiver_group: Optional[
 
 def fire_event_async(event: Event, receiver_group: Optional[
     Union[Receiver, ReceiverGroup, Iterable[Union[Receiver, ReceiverGroup]]]] = None):
-    Task(f"fire_event${event.id}", lambda: fire_event(event, receiver_group), Task.MIN).execute()
+    Task(f"fire_event${event.id}", lambda: fire_event(event, receiver_group), Task.MIN).start()
 
 
 _T = TypeVar('_T', bound=Event)
@@ -130,7 +129,7 @@ def register_event_handler(event: type[_T], func: Callable[[_T], Any], receiver:
     _EVENTS.setdefault(event.id, []).append(handler)
 
 
-class SettingsLoadedEvent(Event):
+class SettingsEvent(Event):
     def get_value(self) -> dict:
         return self.settings
 

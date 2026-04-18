@@ -30,5 +30,5 @@ ui: Task = Task(f'{APP.name}-ui', ui_main, task_type=Task.APP_MAIN)
 
 
 def main():
-    ui.execute()
+    ui.start()
     server.execute_in_this_thread()

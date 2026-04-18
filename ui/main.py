@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Optional
 
 from PyQt5.QtCore import QTimer, QThread, Qt, QByteArray
-from PyQt5.QtGui import QMouseEvent, QImage
+from PyQt5.QtGui import QMouseEvent, QImage, QFont, QCursor
 from PyQt5.QtWidgets import (
-    QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout, QSizePolicy
+    QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout, QSizePolicy, QLabel
 )
 
 from core.app import APP, register_stop, get_server, set_server, get_property
@@ -84,37 +84,99 @@ class MainWindow(QMainWindow):
             LOG.critical(UICRASH.string)
             return
 
-        # ===== Subject 区域 =====
         self.subject_layout_widget = QWidget()
         self.subject_layout = QVBoxLayout(self.subject_layout_widget)
         self.subject_layout.setContentsMargins(0, 0, 0, 0)
         self.subject_layout.setSpacing(6)
         self.subject_layout.setAlignment(Qt.AlignTop)
 
-        # 设置布局拉伸策略
         self.subject_layout.setStretch(0, 0)
         self.subject_layout.addStretch(1)
 
-        # 设置容器大小策略
         self.subject_layout_widget.setSizePolicy(
             QSizePolicy.Expanding,
             QSizePolicy.Expanding
         )
 
-        # ===== 水平布局（居中显示）=====
         h_layout = QHBoxLayout()
-        h_layout.addSpacing(50)  # 左侧伸缩项
+        h_layout.addSpacing(50)
         h_layout.addWidget(self.subject_layout_widget)
-        h_layout.addSpacing(50)  # 右侧伸缩项
+        h_layout.addSpacing(50)
 
-        # ===== 垂直主布局（居中显示）=====
         v_layout = QVBoxLayout(container)
         v_layout.setContentsMargins(0, 0, 0, 0)
-        v_layout.addStretch(1)  # 上方伸缩项
+        v_layout.addStretch(1)
         v_layout.addLayout(h_layout)
-        v_layout.addStretch(1)  # 下方伸缩项
+        v_layout.addStretch(1)
+
+        # 在左下角添加设置入口
+        self._add_settings_entry(v_layout)
 
         container.setLayout(v_layout)
+
+    def _add_settings_entry(self, main_layout: QVBoxLayout) -> None:
+        """
+        在左下角添加设置入口
+        """
+
+        # 创建设置标签
+        settings_label = QLabel()
+        settings_label.setText(t("settings.text_icon"))
+        settings_label.setObjectName("settingsEntry")
+        settings_label.setCursor(QCursor(Qt.PointingHandCursor))
+
+        # 设置样式
+        settings_label.setStyleSheet("""
+            QLabel#settingsEntry {
+                color: #666666;
+                font-size: 12px;
+                padding: 5px 10px;
+                border-radius: 4px;
+                background-color: rgba(0, 0, 0, 0.05);
+            }
+            QLabel#settingsEntry:hover {
+                color: #333333;
+                background-color: rgba(0, 0, 0, 0.1);
+            }
+        """)
+
+        # 设置字体
+        font = QFont()
+        font.setPointSize(9)
+        settings_label.setFont(font)
+
+        # 连接点击事件
+        settings_label.mousePressEvent = self._on_settings_clicked
+
+        # 创建底部布局容器
+        bottom_container = QWidget()
+        bottom_layout = QHBoxLayout(bottom_container)
+        bottom_layout.setContentsMargins(0, 0, 0, 0)
+
+        # 将设置标签放在左下角
+        bottom_layout.addWidget(settings_label, 0, Qt.AlignLeft)
+        bottom_layout.addStretch(1)
+
+        # 将底部容器添加到主布局
+        main_layout.addWidget(bottom_container, 0, Qt.AlignBottom)
+
+        # 保存引用以便后续使用
+        self.settings_label = settings_label
+
+    def _on_settings_clicked(self, event) -> None:
+        """
+        设置标签点击事件
+        """
+        from ui.construct.widgets.SettingsDialog import SettingsDialog
+
+        if event.button() == Qt.LeftButton:
+            if not hasattr(self, '_settings_dialog'):
+                self._settings_dialog = SettingsDialog(self)
+            self._settings_dialog.show_dialog()
+            event.accept()
+        else:
+            # 对于其他鼠标事件，调用父类处理
+            super(type(self), self).mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, a0: QMouseEvent | None) -> None:
         widget_under_mouse = QApplication.widgetAt(a0.globalPos())
@@ -206,7 +268,7 @@ class MainWindow(QMainWindow):
                     text: str = ass.data
                     label = MLabel()
                     label.setText(text)
-                    label.setStyleSheet(load_qss_s("subject_label_", self.settings.get('theme', 'classic')))
+                    label.setStyleSheet(load_qss_s("label_assignment", self.settings.get('theme', 'classic')))
                     label.set_color(color=subject.color)
 
                     ass_card = AssignmentCard(ass, server=self.server, theme=self.settings.get('theme', 'classic'),

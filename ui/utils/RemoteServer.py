@@ -129,8 +129,9 @@ class RemoteServer(AgendaXServer):
                 if packet is None:
                     continue
                 elif isinstance(packet, HelloPacket):
-                    if packet.get_value() != version():
-                        LOG.warning(f"Remote server version mismatch: expected {version()}, got {packet.get_value()}")
+                    _version, _display_name = packet.get_value()
+                    if _version != version():
+                        LOG.warning(f"Remote server version mismatch: expected {version()}, got {_version}")
                     else:
                         LOG.info(f"Remote server version: {packet.get_value()}")
                 elif isinstance(packet, ResourceResponsePacket):

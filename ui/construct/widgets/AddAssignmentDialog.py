@@ -20,7 +20,7 @@ class AddAssignmentWidget(WhiteboardWidget):
 
     def _init_text_input(self):
         self.text_input = MLineEdit(self)
-        self.text_input.setPlaceholderText("请输入作业内容...")
+        self.text_input.setPlaceholderText(t('ui.assignment.text_input'))
         self.text_input.setFixedHeight(34)
 
         font = QFont("Microsoft YaHei", 12)

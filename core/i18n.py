@@ -4,7 +4,9 @@
 """
 import os
 import i18n
-from core.app import LOG
+from core.app import LOG, get_property
+from core.events import register_event_handler, SettingsEvent
+from core.settings import Settings
 from core.utils.path_utils import get_base_dir
 
 _ok: bool = False
@@ -40,6 +42,10 @@ def init_i18n(locale: str = 'zh-CN', fallback: str = 'en'):
     i18n.resource_loader.init_loaders()
 
     _ok = True
+
+    register_event_handler(SettingsEvent, lambda e: set_locale(e.settings.get('lang')))
+    lang = get_property('settings').get('lang')
+    set_locale(lang)
 
     LOG.info(t("i18n.finished_init", lang=locale, dir=i18n_dir))
 

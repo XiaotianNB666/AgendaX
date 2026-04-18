@@ -355,7 +355,8 @@ class AgendaXServer:
                 if packet is None:
                     continue
                 if isinstance(packet, HelloPacket):
-                    self.LOG.info(f"Received HelloPacket from {addr}: {packet.get_value()}")
+                    _version, _display_name = packet.get_value()
+                    self.LOG.info(f"Received HelloPacket from {addr}[{_version}]. Name: {_display_name}")
                 elif isinstance(packet, AssignmentPacket):
                     assignment = packet.get_value()
                     self.update_assignment(assignment)

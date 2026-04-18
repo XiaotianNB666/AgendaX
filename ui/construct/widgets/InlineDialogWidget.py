@@ -112,13 +112,18 @@ class InlineDialogWidget(QFrame):
             self._title_bar.hide()
             self.setStyleSheet(self._get_base_style() + self._get_no_titlebar_style())
 
-        self._content_widget: QWidget = QWidget()
-        self._content_layout: QVBoxLayout = QVBoxLayout(self._content_widget)
-        self._content_layout.setContentsMargins(15, 15, 15, 15)
+        self._init_content()
+
         self._main_layout.addWidget(self._content_widget)
 
         self.raise_()
         self.setVisible(False)
+
+    def _init_content(self):
+        if not hasattr(self, '_content_layout'):
+            self._content_widget: QWidget = QWidget()
+            self._content_layout: QVBoxLayout = QVBoxLayout(self._content_widget)
+            self._content_layout.setContentsMargins(15, 15, 15, 15)
 
     def _get_base_style(self) -> str:
         return load_qss_s("inline_dialog_base_style")
@@ -142,6 +147,7 @@ class InlineDialogWidget(QFrame):
         return self._title
 
     def set_content(self, widget: QWidget) -> None:
+        self._init_content()
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             if item.widget():

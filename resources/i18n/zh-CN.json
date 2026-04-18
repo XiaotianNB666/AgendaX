@@ -36,7 +36,8 @@
             "edit_title": "编辑作业",
             "delete_confirm_title": "删除此作业",
             "submit": "完成",
-            "delete_confirm_message": "是否删除此作业？"
+            "delete_confirm_message": "是否删除此作业？",
+            "text_input": "请输入作业内容..."
         },
         "common": {
             "confirm": "是",
@@ -57,5 +58,16 @@
             "7": "周天"
         },
         "next_weekday": "下%{weekday}"
+    },
+    "settings": {
+        "title": "设置",
+        "theme": "主题",
+        "language": "语言",
+        "draggable": "允许拖拽",
+        "save": "保存",
+        "cancel": "取消",
+        "restart_hint": "部分设置需要重启后生效",
+        "display_name": "在其他设备显示名",
+        "display_name_hint": "该名称将显示在投屏或其他设备中"
     }
 }

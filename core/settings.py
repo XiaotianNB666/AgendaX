@@ -1,20 +1,12 @@
 import json
 import os.path
+import shutil
 from typing import Any
 
-from core.events import fire_event, SettingsLoadedEvent, register_event_handler, ReceiverGroup, ExitEvent, Receiver, \
+from core.events import fire_event, SettingsEvent, register_event_handler, ReceiverGroup, ExitEvent, Receiver, \
     Event
+from core.utils.app_thread import Task
 from core.utils.path_utils import get_work_dir
-
-
-class SettingsSavedEvent(Event):
-    def __init__(self, settings: dict):
-        super().__init__()
-        self.settings = settings
-
-    def get_value(self) -> Any:
-        return self.settings
-
 
 class Settings:
     _settings: dict
@@ -34,8 +26,10 @@ class Settings:
                     self._settings = self._create_default_settings()
             else:
                 with open(settings_file, 'w') as f:
-                    json.dump(self._create_default_settings(), f, ensure_ascii=False)
-        fire_event(SettingsLoadedEvent(self._settings), ReceiverGroup.SERVER)
+                    json.dump(self._create_default_settings(), f, ensure_ascii=False, indent=4)
+
+        fire_event(SettingsEvent(self._settings), ReceiverGroup.ALL)
+        print('fire')
         register_event_handler(ExitEvent, self._save, Receiver.SETTINGS)
 
         set_property('settings', self, Settings)
@@ -84,6 +78,7 @@ class Settings:
             ],
             'theme': 'classic',
             'lang': 'zh-CN',
+            'display_name': '我的设备',
             'time_mapping': {
                 '晚一': '19:25:00',
                 '晚二': '20:20:00',
@@ -94,9 +89,26 @@ class Settings:
 
     def _save(self) -> None:
         with open(os.path.join(get_work_dir('.app'), '.settings'), 'w', encoding='utf-8') as f:
-            s = json.dumps(self._settings, ensure_ascii=False)
+            s = json.dumps(self._settings, ensure_ascii=False, indent=4)
             f.write(s)
-        fire_event(SettingsSavedEvent(self._settings), ReceiverGroup.SERVER)
+        fire_event(SettingsEvent(self._settings), ReceiverGroup.SERVER)
+
+    def _backup_old(self):
+        if not os.path.isfile(os.path.join(get_work_dir('.app'), '.settings')):
+            return
+        else:
+            try:
+                shutil.copy(os.path.join(get_work_dir('.app'), '.settings'), os.path.join(get_work_dir('.app'), '._settings'))
+            except:
+                return
+
+    def save(self) -> None:
+        self._backup_old()
+        self._save()
+
+    def save_async(self):
+        task = Task("settings-save", self.save)
+        task.start()
 
     def get(self, path: str, default: Any = None) -> Any:
         """

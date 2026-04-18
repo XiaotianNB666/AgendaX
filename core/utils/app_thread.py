@@ -18,7 +18,7 @@ class Task:
         self.executable = executable
         self.task_name = task_name
 
-    def execute(self, is_join: bool = False, *args):
+    def start(self, is_join: bool = False, *args):
         self.thread = threading.Thread(target=__static_exec__, name=self.task_name, args=[self, *args])
         self.thread.start()
         if is_join:
@@ -37,7 +37,7 @@ class Task:
 def __static_exec__(task: Task, *args) -> int:
     from core.app import APP, register_stop
     if Task.MIN < task.task_type <= Task.MAJOR:
-        task.LOGGER.info(f"executing a {'major' if task.task_type == Task.MAJOR else ''} task[{task.thread.name}]")
+        task.LOGGER.info(f"executing a {'major ' if task.task_type == Task.MAJOR else ''}task[{task.thread.name}]")
     elif task.task_type == Task.APP_MAIN:
         task.LOGGER.info(f"Starting {APP.name} APP.")
     register_stop(task)
