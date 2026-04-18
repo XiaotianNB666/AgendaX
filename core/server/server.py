@@ -42,6 +42,18 @@ class Assignment:
                finish_time_type: str):
         return cls(subject_id, data_type, data, start_time, finish_time, finish_time_type)
 
+    def __repr__(self) -> str:
+        return (
+            f"Assignment("
+            f"id={self.id}, "
+            f"subject={self.subject!r}, "
+            f"data_type={self.data_type!r}, "
+            f"start_time={self.start_time}, "
+            f"finish_time={self.finish_time}, "
+            f"finish_time_type={self.finish_time_type!r})"
+        )
+
+
 
 # =========================
 # Database Helper (SQLModel)
@@ -478,22 +490,18 @@ class AgendaXServer:
                 pass
         self._del_assignment_by_id(ass.id)
 
-    def update_assignment(self, assignment: Assignment):
+    def update_assignment(self, assignment: Assignment) -> Optional[int]:
         try:
             with Session(self.database.engine) as session:
                 if assignment.id is None:
-                    self.database.add(assignment)
-                    return
-
+                    return self.database.add(assignment)
                 stmt = (
                     select(AssignmentTable)
                     .where(AssignmentTable.id == assignment.id)
                 )
                 existing = session.exec(stmt).one_or_none()
-
                 if not existing:
-                    self.database.add(assignment)
-                    return
+                    return self.database.add(assignment)
 
                 existing.subject = assignment.subject
                 existing.data_type = assignment.data_type
@@ -504,6 +512,8 @@ class AgendaXServer:
 
                 session.add(existing)
                 session.commit()
+
+                return assignment.id
         except Exception as e:
             self.LOG.error(f"Failed to update assignment: {e}", exc_info=True)
 

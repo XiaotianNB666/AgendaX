@@ -9,6 +9,7 @@ from core.i18n import t
 from core.server.packets import ResourceResponsePacket, AssignmentDelPacket
 from core.server.server import Assignment, AgendaXServer
 from core.settings import Settings
+from core.utils.app_thread import Task
 from ui.construct.bases.abstract_widget import MLabel, MPushButton
 from ui.construct.bases.card import Card
 from ui.construct.widgets.AddAssignmentDialog import AddAssignmentDialog
@@ -313,6 +314,7 @@ class AssignmentCard(Card):
                     sv.save_resource(hashed, _data)
                 else:
                     sv.send_packet(None, ResourceResponsePacket.create(hashed, _data))
+            self.set(ImageLabel(new_img))
 
         new_time, time_type = self._edit_dialog.assignment_widget.get_finish_time()
         self._assignment.finish_time = float(new_time)
@@ -321,9 +323,10 @@ class AssignmentCard(Card):
         self.parse_assignment()
 
         if sv := get_server():
-            sv.update_assignment(self._assignment)
+            self.update_assignment_async(sv)
 
         self._edit_dialog.hide_dialog()
+        self._edit_dialog.assignment_widget.clear()
 
     def del_this_assignment(self):
         if sv := get_server():
@@ -331,3 +334,7 @@ class AssignmentCard(Card):
                 sv.del_assignment_by_id(self._assignment.id)
             else:
                 sv.send_packet(None, AssignmentDelPacket.create(self._assignment.id))
+
+    def update_assignment_async(self, sv: AgendaXServer):
+        _t = Task('update', lambda: sv.update_assignment(self._assignment))
+        _t.start()

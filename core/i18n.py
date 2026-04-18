@@ -44,8 +44,9 @@ def init_i18n(locale: str = 'zh-CN', fallback: str = 'en'):
     _ok = True
 
     register_event_handler(SettingsEvent, lambda e: set_locale(e.settings.get('lang')))
-    lang = get_property('settings').get('lang')
-    set_locale(lang)
+    settings = get_property('settings')
+    if settings:
+        set_locale(settings.get('lang'))
 
     LOG.info(t("i18n.finished_init", lang=locale, dir=i18n_dir))
 

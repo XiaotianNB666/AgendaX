@@ -29,7 +29,6 @@ class Settings:
                     json.dump(self._create_default_settings(), f, ensure_ascii=False, indent=4)
 
         fire_event(SettingsEvent(self._settings), ReceiverGroup.ALL)
-        print('fire')
         register_event_handler(ExitEvent, self._save, Receiver.SETTINGS)
 
         set_property('settings', self, Settings)

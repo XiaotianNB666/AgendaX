@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from PyQt5.QtCore import QTimer, QThread, Qt, QByteArray
-from PyQt5.QtGui import QMouseEvent, QImage, QFont, QCursor
+from PyQt5.QtGui import QMouseEvent, QImage, QFont, QCursor, QPixmap
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QVBoxLayout, QWidget, QHBoxLayout, QSizePolicy, QLabel
 )
@@ -24,6 +24,9 @@ from ui.construct.subject_card import SubjectCard
 from ui.construct.widgets.AssignmentCard import AssignmentCard, ImageLabel
 from ui.utils.RemoteServer import RemoteServer
 from ui.utils.qss_loader import load_qss_s
+
+import faulthandler
+faulthandler.enable()
 
 LOG = getLogger(f'{APP.name}-ui')
 UICRASH = CrashReport()
