@@ -19,11 +19,16 @@ def launch_agendax(exe_path: str, args: list[str]):
 
     LAUNCHER_LOG.info(f"Launching: {exe_path} {' '.join(args)}")
 
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    si.wShowWindow = subprocess.SW_HIDE
+
     proc = subprocess.Popen(
         [exe_path] + args,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        startupinfo=si
     )
 
     stdout, stderr = proc.communicate()
