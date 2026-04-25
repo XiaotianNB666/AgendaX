@@ -28,9 +28,7 @@ jobs:
 
       - name: Build executables with PyInstaller
         run: |
-          pyinstaller -F app_launcher.py -n AgendaXLauncher --add-data "resources;resources"
-          pyinstaller -F app_main.py -n AgendaX --add-data "resources;resources" --collect-all sqlalchemy
-          pyinstaller -F app_server.py -n AgendaXServer --add-data "resources;resources" --collect-all sqlalchemy
+          cmd /c build.bat
 
       - name: Install Inno Setup
         run: |
