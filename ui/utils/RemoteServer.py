@@ -145,8 +145,6 @@ class RemoteServer(AgendaXServer):
                 elif isinstance(packet, CrashPacket):
                     try:
                         crash_info = packet.get_value()
-                        from boot.main_boot import on_crash
-                        on_crash(crash_info)
                     except Exception:
                         self.LOG.exception("Error handling crash packet")
             except (ConnectionAbortedError, ConnectionResetError, RuntimeError) as e:

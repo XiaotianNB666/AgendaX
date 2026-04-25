@@ -1,21 +1,9 @@
 from boot.boot_core import main as maincore
 from core.app import APP, get_server
-from core.crash_report import crash_handler, CrashReport
+from core.crash_report import crash_handler
 from core.utils.app_thread import Task
-from ui.construct.crash_ui import CrashUI, show_window
-
-
-def on_crash(report: CrashReport):
-    crash_ui = CrashUI(report)
-    show_window(crash_ui)
-
-
-def on_crash(report: CrashReport):
-    crash_ui = CrashUI(report)
-    show_window(crash_ui)
-
 # ui
-@crash_handler(f"{APP.name}-ui", on_crash)
+@crash_handler(f"{APP.name}-ui")
 def ui_main() -> int:
     from ui.main import main
     result = main()

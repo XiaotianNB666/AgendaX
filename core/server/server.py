@@ -15,6 +15,7 @@ from core.events import register_event_handler, ExitEvent, fire_event, Event
 from core.server.packets import Packet, ShutdownPacket, HelloPacket, HeadPacket, get_packet, AssignmentPacket, \
     AssignmentDelPacket, ResourceResponsePacket, ResourceRequestPacket, MessagePacket
 from core.settings import Settings
+from core.utils.app_thread import Task
 from core.utils.path_utils import get_work_dir
 
 """
@@ -243,6 +244,8 @@ class AgendaXServer:
             signal.signal(signal.SIGTERM, self._signal_handler)
 
         register_event_handler(ExitEvent, lambda e: self.shutdown())
+        from core.app import register_stop
+        register_stop(Task("AgendaXServer-Shutdown", self.force_stop, task_type=Task.MIN))
 
         fire_event(ServerStartedEvent(self))
 
@@ -252,6 +255,12 @@ class AgendaXServer:
     @property
     def running(self) -> bool:
         return self._state == ServerState.RUNNING
+
+    # =========================
+    # force stop
+    # =========================
+    def force_stop(self):
+        self.shutdown(quit_app=False)
 
     # =========================
     # Lifecycle
@@ -267,7 +276,7 @@ class AgendaXServer:
             self.handle_connection()
         except Exception as e:
             self.LOG.error(f"Error in handle_connection: {e}", exc_info=True)
-            self.shutdown()
+            self.shutdown(False)
 
     def shutdown(self, quit_app: bool = True):
         from core.app import app_quit
@@ -276,6 +285,7 @@ class AgendaXServer:
 
         self.LOG.info("Stopping AgendaXServer...")
         self._state = ServerState.STOPPING
+        self.send_shutdown_message()
 
         # 先停止线程池
         try:
@@ -300,7 +310,7 @@ class AgendaXServer:
     # =========================
     # Signal
     # =========================
-    def _signal_handler(self, signum):
+    def _signal_handler(self, signum, ignored):
         self.LOG.warning(f"Received signal {signum}, initiating shutdown...")
         self.shutdown()
 

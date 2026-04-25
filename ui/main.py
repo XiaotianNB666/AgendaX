@@ -321,8 +321,13 @@ def detect_image_ext(content: bytes) -> str | None:
 def main() -> int:
     app = QApplication(sys.argv)
     main_window = MainWindow()
+
     register_stop(run_on_ui_thread(main_window.force_stop))
-    main_window.show()
+    if '--no-main-window' in sys.argv:
+        main_window.hide()
+        main_window.floating_ball.show()
+    else:
+        main_window.show()
     LOG.info(t('ui.main_window.show'))
     return app.exec_()
 

@@ -1,4 +1,5 @@
 import sys
+import os
 import weakref
 from typing import NoReturn, Callable, Optional, Any, TypeVar
 
@@ -17,7 +18,7 @@ except Exception:
 
 
 def version() -> str:
-    return '1.0.2'
+    return '1.1.0'
 
 
 class APP:
@@ -26,8 +27,6 @@ class APP:
 
 LOG_LEVEL: int = logging.DEBUG if '--debug' in sys.argv else logging.INFO
 if '--debug' in sys.argv:
-    import os
-
     os.environ["QT_LOGGING_RULES"] = "*.debug=true"
 LOG: logging.Logger = logging.getLogger(APP.name)
 
@@ -126,13 +125,12 @@ def app_quit():
 
 
 def app_force_stop(status) -> NoReturn:
-    # 强制退出之前尝试触发安全的停止流程
     try:
         app_quit()
     except Exception as e:
         LOG.error(f"Exception in app_quit during force stop: {e}", exc_info=True)
     finally:
-        sys.exit(status)
+        os._exit(status)
 
 
 def _wrap_bound_method_safe(bound_method: Callable) -> Callable:

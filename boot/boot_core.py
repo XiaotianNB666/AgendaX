@@ -4,7 +4,6 @@ from core.app import LOG, APP, set_server, set_builtin, init_app
 from core.bases.resource_release import RESOURCE_RELEASE
 from core.crash_report import crash_handler, VAR_MONITOR
 from core.server.server import AgendaXServer
-from platforms.windows.winutils import registerShutdown
 
 assert __name__ != "__main__", "This cannot be executed directly."
 
@@ -12,7 +11,6 @@ assert __name__ != "__main__", "This cannot be executed directly."
 def init():
     init_app()
     atexit.register(clean)
-    registerShutdown(clean)
     VAR_MONITOR.watch('boot_main@RESOURCE_RELEASE', RESOURCE_RELEASE)
 
 
