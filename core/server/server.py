@@ -501,31 +501,34 @@ class AgendaXServer:
         self._del_assignment_by_id(ass.id)
 
     def update_assignment(self, assignment: Assignment) -> Optional[int]:
-        try:
-            with Session(self.database.engine) as session:
-                if assignment.id is None:
-                    return self.database.add(assignment)
-                stmt = (
-                    select(AssignmentTable)
-                    .where(AssignmentTable.id == assignment.id)
-                )
-                existing = session.exec(stmt).one_or_none()
-                if not existing:
-                    return self.database.add(assignment)
+        def _update(_assignment: Assignment):
+            try:
+                with Session(self.database.engine) as session:
+                    if _assignment.id is None:
+                        return self.database.add(_assignment)
+                    stmt = (
+                        select(AssignmentTable)
+                        .where(AssignmentTable.id == _assignment.id)
+                    )
+                    existing = session.exec(stmt).one_or_none()
+                    if not existing:
+                        return self.database.add(_assignment)
 
-                existing.subject = assignment.subject
-                existing.data_type = assignment.data_type
-                existing.data = assignment.data
-                existing.start_time = assignment.start_time
-                existing.finish_time = assignment.finish_time
-                existing.finish_time_type = assignment.finish_time_type
+                    existing.subject = _assignment.subject
+                    existing.data_type = _assignment.data_type
+                    existing.data = _assignment.data
+                    existing.start_time = _assignment.start_time
+                    existing.finish_time = _assignment.finish_time
+                    existing.finish_time_type = _assignment.finish_time_type
 
-                session.add(existing)
-                session.commit()
+                    session.add(existing)
+                    session.commit()
 
-                return assignment.id
-        except Exception as e:
-            self.LOG.error(f"Failed to update assignment: {e}", exc_info=True)
+                    return _assignment.id
+            except Exception as e:
+                self.LOG.error(f"Failed to update assignment: {e}", exc_info=True)
+        assignment.id = _update(assignment)
+        return assignment.id
 
     @property
     def is_local(self) -> bool:
